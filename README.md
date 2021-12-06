@@ -24,7 +24,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 0.1.0"}
+    {:walex, "~> 0.2.0"}
   ]
 end
 ```
@@ -135,16 +135,17 @@ defmodule ExampleApp.UserAccountEvent do
 
   def process_event(txn) do
     cond do
-      insert_event?("user_account", txn) ->
+      insert_event?(:user_account, txn) ->
         {:ok, user_account} = event(:user_account, txn)
         IO.inspect(user_account_insert_event: user_account)
         # do something with user_account data
 
-      update_event?("user_account", txn) ->
+      update_event?(:user_account, txn) ->
         {:ok, user_account} = event(:user_account, txn)
         IO.inspect(user_account_update_event: user_account)
 
-      delete_event?("user_account", txn) ->
+      # you can also specify the relation
+      delete_event?("public.user_account", txn) ->
         {:ok, user_account} = event(:user_account, txn)
         IO.inspect(user_account_delete_event: user_account)
 

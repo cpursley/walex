@@ -107,7 +107,13 @@ defmodule WalEx.TransactionFilter do
   def update_event?(relation, txn), do: relation("UPDATE", relation, txn)
   def delete_event?(relation, txn), do: relation("DELETE", relation, txn)
 
-  defp relation(event, relation, txn) do
+  defp relation(event, relation, txn) when is_atom(relation) do
+    matches?(%{event: event, relation: "public:" <> to_string(relation)}, txn)
+  end
+
+  defp relation(event, relation, txn) when is_binary(relation) do
+    IO.inspect(relation: relation)
+
     if String.contains?(relation, ":") do
       matches?(%{event: event, relation: relation}, txn)
     else
