@@ -99,7 +99,7 @@ config :walex,
   db_port: "5432",
   db_ssl: true,
   db_ip_version: "ipv6",
-  # "temporary atom is also supported if you don't want Postgres keeping track of what you've acknowledged
+  # :temporary atom is also supported if you don't want Postgres keeping track of what you've acknowledged
   slot_name:  "example",
   max_replication_lag_in_mb: 0,
   publications: ["events"],
@@ -155,9 +155,9 @@ defmodule ExampleApp.UserAccountEvent do
 end
 ```
 
-Additional filter helpers available in the _WalEx.TransactionFilter_ module.
+Additional filter helpers available in the [WalEx.TransactionFilter](lib/walex/transaction_filter.ex) module.
 
-The event returns a Struct (UPDATE example where name field was changed):
+The process_event returns an `Event` Struct with changes provided by the [map_diff](https://github.com/Qqwy/elixir-map_diff) library (UPDATE example where _name_ field was changed):
 
 ```elixir
 %Event{
