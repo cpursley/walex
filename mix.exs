@@ -1,4 +1,3 @@
-# TODO ~ change module name to WalEx (capital "E")
 defmodule WalEx.MixProject do
   use Mix.Project
 
@@ -7,8 +6,13 @@ defmodule WalEx.MixProject do
       app: :walex,
       version: "0.1.0",
       elixir: "~> 1.12.3",
+      build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      description: description(),
+      package: package(),
+      deps: deps(),
+      name: "WalEx",
+      source_url: "https://github.com/cpursley/walex"
     ]
   end
 
@@ -28,6 +32,19 @@ defmodule WalEx.MixProject do
       {:map_diff, "~> 1.3"},
       {:retry, "~> 0.15.0"},
       {:timex, "~> 3.7.6"}
+    ]
+  end
+
+  defp description() do
+    "Listen to change events on your Postgres tables then perform callback-like actions with the data."
+  end
+
+  defp package() do
+    [
+      files: ~w(lib test .formatter.exs mix.exs README* LICENSE* src),
+      maintainers: ["Chase Pursley"],
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => "https://github.com/elixir-ecto/postgrex"}
     ]
   end
 end
