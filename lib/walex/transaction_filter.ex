@@ -112,8 +112,6 @@ defmodule WalEx.TransactionFilter do
   end
 
   defp relation(event, relation, txn) when is_binary(relation) do
-    IO.inspect(relation: relation)
-
     if String.contains?(relation, ":") do
       matches?(%{event: event, relation: relation}, txn)
     else

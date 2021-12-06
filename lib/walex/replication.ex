@@ -266,7 +266,6 @@ defmodule WalEx.Replication do
       end
     end)
     |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
-    |> IO.inspect()
   end
 
   defp data_tuple_to_map(_columns, _tuple_data), do: %{}
