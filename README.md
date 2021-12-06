@@ -2,9 +2,7 @@
 
 Postgres [Change Data Capture (CDC)](https://en.wikipedia.org/wiki/Change_data_capture) in Elixir.
 
-WalEx allows you to listen to change events on your Postgres tables then perform callback-like actions with the data.
-
-For example:
+WalEx allows you to listen to change events on your Postgres tables then perform callback-like actions with the data. For example:
 
 - Stream database changes to an external data processing service
 - Send a user a welcome email after they create a new account
@@ -101,13 +99,13 @@ config :walex,
   db_port: "5432",
   db_ssl: true,
   db_ip_version: "ipv6",
-  # temporary is also supported if you don't want Postgres keeping track of what you've acknowledged
+  # "temporary atom is also supported if you don't want Postgres keeping track of what you've acknowledged
   slot_name:  "example",
   max_replication_lag_in_mb: 0,
   publications: ["events"],
-  # specify the changes you want to subscribe to
+  # specify the changes you want to subscribe to. If you exclude, it will subscribe to all change events
   subscriptions: [:user_account, :todo],
-  # include your modules for handling events
+  # include your modules for processing events (supervised)
   modules: [ExampleApp.UserAcountEvent, ExampleApp.TodoEvent]
 ```
 
@@ -159,14 +157,26 @@ end
 
 Additional filter helpers available in the _WalEx.TransactionFilter_ module.
 
-The resulting map data returns a Struct (UPDATE example):
+The event returns a Struct (UPDATE example where name field was changed):
 
 ```elixir
 %Event{
   type: :update,
-  record: # the new record,
-  changes: # changes provided by the map_diff library,
-  commit_timestamp: # commit_timestamp
+   # the new record
+  record: %{
+    id: 1234,
+    name: "Chase",
+    ...
+  },
+  # changes provided by the map_diff library,
+  changes: %{
+    name: %{
+      added: "Chase Pursley",
+      changed: :primitive_change,
+      removed: "Chase"
+    }
+  },
+  commit_timestamp: ~U[2021-12-06 14:32:49Z]
 }
 ```
 
