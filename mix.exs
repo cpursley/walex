@@ -41,7 +41,7 @@ defmodule WalEx.MixProject do
 
   defp package() do
     [
-      files: ~w(lib test .formatter.exs mix.exs README* LICENSE* src),
+      files: ~w(lib test .formatter.exs mix.exs README* LICENSE*),
       maintainers: ["Chase Pursley"],
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/elixir-ecto/postgrex"}
