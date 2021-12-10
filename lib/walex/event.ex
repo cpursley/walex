@@ -1,7 +1,8 @@
 defmodule WalEx.Event do
   defstruct(
     type: nil,
-    record: nil,
+    new_record: nil,
+    old_record: nil,
     changes: nil,
     commit_timestamp: nil
   )
@@ -9,21 +10,23 @@ defmodule WalEx.Event do
   import WalEx.TransactionFilter
 
   alias WalEx.Event
+  alias WalEx.Adapters.Changes.{DeletedRecord, NewRecord, UpdatedRecord}
 
-  def cast(%{
+  def cast(%NewRecord{
         type: "INSERT",
         record: record,
         commit_timestamp: commit_timestamp
       }) do
     %Event{
       type: :insert,
-      record: record,
+      new_record: record,
+      old_record: nil,
       changes: nil,
       commit_timestamp: commit_timestamp
     }
   end
 
-  def cast(%{
+  def cast(%UpdatedRecord{
         type: "UPDATE",
         record: record,
         old_record: old_record,
@@ -31,22 +34,23 @@ defmodule WalEx.Event do
       }) do
     %Event{
       type: :update,
-      record: record,
+      new_record: record,
+      old_record: old_record,
       changes: changes(old_record, record),
       commit_timestamp: commit_timestamp
     }
   end
 
-  def cast(%{
+  def cast(%DeletedRecord{
         type: "DELETE",
-        record: nil,
         old_record: old_record,
         commit_timestamp: commit_timestamp
       }) do
     %Event{
       type: :delete,
-      record: nil,
-      changes: old_record,
+      new_record: nil,
+      old_record: old_record,
+      changes: nil,
       commit_timestamp: commit_timestamp
     }
   end
