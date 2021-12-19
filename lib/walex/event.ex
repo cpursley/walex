@@ -1,5 +1,6 @@
 defmodule WalEx.Event do
   defstruct(
+    table: nil,
     type: nil,
     new_record: nil,
     old_record: nil,
@@ -13,11 +14,13 @@ defmodule WalEx.Event do
   alias WalEx.Adapters.Changes.{DeletedRecord, NewRecord, UpdatedRecord}
 
   def cast(%NewRecord{
+        table: table,
         type: "INSERT",
         record: record,
         commit_timestamp: commit_timestamp
       }) do
     %Event{
+      table: String.to_atom(table),
       type: :insert,
       new_record: record,
       old_record: nil,
@@ -27,12 +30,14 @@ defmodule WalEx.Event do
   end
 
   def cast(%UpdatedRecord{
+        table: table,
         type: "UPDATE",
         record: record,
         old_record: old_record,
         commit_timestamp: commit_timestamp
       }) do
     %Event{
+      table: String.to_atom(table),
       type: :update,
       new_record: record,
       old_record: old_record,
@@ -42,11 +47,13 @@ defmodule WalEx.Event do
   end
 
   def cast(%DeletedRecord{
+        table: table,
         type: "DELETE",
         old_record: old_record,
         commit_timestamp: commit_timestamp
       }) do
     %Event{
+      table: String.to_atom(table),
       type: :delete,
       new_record: nil,
       old_record: old_record,
