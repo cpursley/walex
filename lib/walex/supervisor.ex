@@ -30,7 +30,7 @@ defmodule WalEx.Supervisor do
         _ -> epgsql_params
       end
 
-    publications = Application.get_env(:walex, :publications) |> Jason.decode!()
+    publications = Application.get_env(:walex, :publications)
 
     # Use a named replication slot if you want services to pickup from where
     # it left after a restart because of, for example, a crash.
