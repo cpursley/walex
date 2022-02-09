@@ -261,6 +261,9 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
           nil ->
             :ok
 
+          {_, nil} ->
+            :ok
+
           {_, lag_in_bytes} ->
             if String.to_integer(lag_in_bytes) / 1_000_000 <= max_replication_lag_in_mb do
               :ok
