@@ -1,6 +1,13 @@
 defmodule WalEx.Supervisor do
   use Supervisor
 
+  def child_spec(config) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [config]}
+    }
+  end
+
   def start_link(config) do
     Supervisor.start_link(__MODULE__, config, name: __MODULE__)
   end
