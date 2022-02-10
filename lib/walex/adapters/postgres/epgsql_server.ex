@@ -35,7 +35,7 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
   end
 
   def close_connection do
-    GenServer.call(__MODULE__, :close)
+    GenServer.call(__MODULE__, :close_connection)
   end
 
   def acknowledge_lsn(lsn) do
