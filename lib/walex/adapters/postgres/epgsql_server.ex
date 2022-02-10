@@ -34,6 +34,10 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
 
+  def close_connection do
+    GenServer.call(__MODULE__, :close)
+  end
+
   def acknowledge_lsn(lsn) do
     GenServer.call(__MODULE__, {:ack_lsn, lsn})
   end
@@ -74,12 +78,6 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
         {:stop, error, state}
     end
   end
-
-  # temp
-  # @impl true
-  # def init(_config) do
-  #   {:stop, :bad_config, %State{}}
-  # end
 
   @impl true
   def init(config) do
@@ -150,6 +148,22 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
 
   @impl true
   def handle_call({:ack_lsn, _}, _from, state), do: {:reply, :error, state}
+
+  def handle_call(
+        :close_connection,
+        _from,
+        %{epgsql_replication_pid: epgsql_replication_pid, epgsql_select_pid: epgsql_select_pid} =
+          state
+      ) do
+    is_pid(epgsql_replication_pid) && :epgsql.close(epgsql_replication_pid)
+    is_pid(epgsql_select_pid) && :epgsql.close(epgsql_select_pid)
+
+    {:reply, :ok, state}
+  end
+
+  def handle_call(:close_connection, _from, state) do
+    {:reply, :ok, state}
+  end
 
   @impl true
   def handle_info(
