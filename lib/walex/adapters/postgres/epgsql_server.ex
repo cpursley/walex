@@ -30,6 +30,14 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
   # Within 10% of a delay's value
   @jitter 0.1
 
+  def child_spec(config) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [config]},
+      restart: :transient
+    }
+  end
+
   def start_link(config) when is_list(config) do
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
