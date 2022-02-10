@@ -34,7 +34,7 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
     %{
       id: __MODULE__,
       start: {__MODULE__, :start_link, [config]},
-      restart: :transient
+      restart: :temporary
     }
   end
 
@@ -91,6 +91,16 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
   def init(config) do
     IO.inspect(walex_config: config)
     {:stop, :bad_config, %State{}}
+  end
+
+  @impl true
+  def terminate(:shutdown, %{
+        epgsql_replication_pid: epgsql_replication_pid,
+        epgsql_select_pid: epgsql_select_pid
+      }) do
+    Logger.info("[#{__MODULE__}] Shutdown message received, terminating slot connection")
+    is_pid(epgsql_replication_pid) && :epgsql.close(epgsql_replication_pid)
+    is_pid(epgsql_select_pid) && :epgsql.close(epgsql_select_pid)
   end
 
   @impl true
@@ -163,6 +173,7 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
         %{epgsql_replication_pid: epgsql_replication_pid, epgsql_select_pid: epgsql_select_pid} =
           state
       ) do
+    Logger.info("Closing connection...")
     is_pid(epgsql_replication_pid) && :epgsql.close(epgsql_replication_pid)
     is_pid(epgsql_select_pid) && :epgsql.close(epgsql_select_pid)
 
