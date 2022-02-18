@@ -142,7 +142,7 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
         maybe_drop_replication_slot(state)
         start_replication(state)
 
-        {:ok, state}
+        {:noreply, state}
 
       error ->
         Logger.info("#{inspect(error)}")
