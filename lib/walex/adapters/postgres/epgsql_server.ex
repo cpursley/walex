@@ -30,8 +30,20 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
   # Within 10% of a delay's value
   @jitter 0.1
 
+  def child_spec(config) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [config]},
+      restart: :transient
+    }
+  end
+
   def start_link(config) when is_list(config) do
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
+  end
+
+  def close_connection do
+    GenServer.call(__MODULE__, :close_connection)
   end
 
   def acknowledge_lsn(lsn) do
@@ -75,16 +87,20 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
     end
   end
 
-  # temp
-  # @impl true
-  # def init(_config) do
-  #   {:stop, :bad_config, %State{}}
-  # end
-
   @impl true
   def init(config) do
     IO.inspect(walex_config: config)
     {:stop, :bad_config, %State{}}
+  end
+
+  @impl true
+  def terminate(:shutdown, %{
+        epgsql_replication_pid: epgsql_replication_pid,
+        epgsql_select_pid: epgsql_select_pid
+      }) do
+    Logger.info("[#{__MODULE__}] Shutdown message received, terminating slot connection")
+    is_pid(epgsql_replication_pid) && :epgsql.close(epgsql_replication_pid)
+    is_pid(epgsql_select_pid) && :epgsql.close(epgsql_select_pid)
   end
 
   @impl true
@@ -108,7 +124,7 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
            | epgsql_replication_pid: epgsql_replication_pid,
              epgsql_select_pid: epgsql_select_pid
          },
-         :ok <- check_replication_lag_size(updated_state),
+         {:ok, _state} <- {check_replication_lag_size(updated_state), updated_state},
          {:ok, updated_state} <- start_replication(updated_state) do
       {:noreply, updated_state}
     else
@@ -121,7 +137,15 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
 
         {:stop, error, state}
 
+      {{:error, :wal_status_lost}, state} ->
+        Logger.info("Dropping replication slot due to lost status")
+        maybe_drop_replication_slot(state)
+        start_replication(state)
+
+        {:noreply, state}
+
       error ->
+        Logger.info("#{inspect(error)}")
         Enum.each(epgsql_pids, &(is_pid(&1) && :epgsql.close(&1)))
 
         {:stop, error, state}
@@ -150,6 +174,23 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
 
   @impl true
   def handle_call({:ack_lsn, _}, _from, state), do: {:reply, :error, state}
+
+  def handle_call(
+        :close_connection,
+        _from,
+        %{epgsql_replication_pid: epgsql_replication_pid, epgsql_select_pid: epgsql_select_pid} =
+          state
+      ) do
+    Logger.info("Closing connection...")
+    is_pid(epgsql_replication_pid) && :epgsql.close(epgsql_replication_pid)
+    is_pid(epgsql_select_pid) && :epgsql.close(epgsql_select_pid)
+
+    {:reply, :ok, state}
+  end
+
+  def handle_call(:close_connection, _from, state) do
+    {:reply, :ok, state}
+  end
 
   @impl true
   def handle_info(
@@ -254,17 +295,22 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
        when is_pid(epgsql_select_pid) and max_replication_lag_in_mb > 0 do
     case :epgsql.squery(
            epgsql_select_pid,
-           "SELECT slot_name, pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn) FROM pg_replication_slots"
+           "SELECT slot_name, pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn), wal_status FROM pg_replication_slots"
          ) do
       {:ok, _, results} ->
-        case Enum.find(results, fn {slot_name, _} -> slot_name == expected_slot_name end) do
+        case Enum.find(results, fn {slot_name, _, _} -> slot_name == expected_slot_name end) do
           nil ->
             :ok
 
-          {_, lag_in_bytes} ->
+          {_slot_name, _, "lost"} ->
+            Logger.error("Wal status lost")
+            {:error, :wal_status_lost}
+
+          {_, lag_in_bytes, _} when is_binary(lag_in_bytes) ->
             if String.to_integer(lag_in_bytes) / 1_000_000 <= max_replication_lag_in_mb do
               :ok
             else
+              Logger.error("replication_lag_exceeds_set_limit")
               {:error, :replication_lag_exceeds_set_limit}
             end
         end

@@ -1,6 +1,13 @@
 defmodule WalEx.Supervisor do
   use Supervisor
 
+  def child_spec(config) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [config]}
+    }
+  end
+
   def start_link(config) do
     Supervisor.start_link(__MODULE__, config, name: __MODULE__)
   end
@@ -30,7 +37,7 @@ defmodule WalEx.Supervisor do
         _ -> epgsql_params
       end
 
-    publications = Application.get_env(:walex, :publications) |> Jason.decode!()
+    publications = Application.get_env(:walex, :publications)
 
     # Use a named replication slot if you want services to pickup from where
     # it left after a restart because of, for example, a crash.
