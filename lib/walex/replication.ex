@@ -59,7 +59,6 @@ defmodule WalEx.Replication do
 
   @impl true
   def handle_info(msg, state) do
-    IO.inspect(walex_msg: msg)
     {:noreply, state}
   end
 

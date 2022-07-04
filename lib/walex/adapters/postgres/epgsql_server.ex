@@ -89,18 +89,27 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
 
   @impl true
   def init(config) do
-    IO.inspect(walex_config: config)
     {:stop, :bad_config, %State{}}
   end
 
   @impl true
-  def terminate(:shutdown, %{
-        epgsql_replication_pid: epgsql_replication_pid,
-        epgsql_select_pid: epgsql_select_pid
-      }) do
+  def terminate(
+        :shutdown,
+        %{
+          epgsql_replication_pid: epgsql_replication_pid,
+          epgsql_select_pid: epgsql_select_pid
+        }
+      ) do
     Logger.info("[#{__MODULE__}] Shutdown message received, terminating slot connection")
     is_pid(epgsql_replication_pid) && :epgsql.close(epgsql_replication_pid)
     is_pid(epgsql_select_pid) && :epgsql.close(epgsql_select_pid)
+  end
+
+  # temp ~ for troubleshooting
+  # {:EXIT, #PID<0.8732.0>, {:error, {:error, :fatal, "57P01", :admin_shutdown, "terminating connection due to administrator command", [file: "postgres.c", line: "3096", routine: "ProcessInterrupts", severity: "FATAL"]}}}
+  def terminate(arg1, arg2) do
+    Logger.error(terminate_issue_arg1: arg1)
+    Logger.error(terminate_issue_arg2: arg2)
   end
 
   @impl true
@@ -300,6 +309,12 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
       {:ok, _, results} ->
         case Enum.find(results, fn {slot_name, _, _} -> slot_name == expected_slot_name end) do
           nil ->
+            :ok
+
+          {_, nil} ->
+            :ok
+
+          {_, :null} ->
             :ok
 
           {_slot_name, _, "lost"} ->
