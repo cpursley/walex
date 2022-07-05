@@ -88,7 +88,7 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
   end
 
   @impl true
-  def init(config) do
+  def init(_config) do
     {:stop, :bad_config, %State{}}
   end
 
@@ -105,11 +105,9 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
     is_pid(epgsql_select_pid) && :epgsql.close(epgsql_select_pid)
   end
 
-  # temp ~ for troubleshooting
-  # {:EXIT, #PID<0.8732.0>, {:error, {:error, :fatal, "57P01", :admin_shutdown, "terminating connection due to administrator command", [file: "postgres.c", line: "3096", routine: "ProcessInterrupts", severity: "FATAL"]}}}
-  def terminate(arg1, arg2) do
-    Logger.error(terminate_issue_arg1: arg1)
-    Logger.error(terminate_issue_arg2: arg2)
+  @impl true
+  def terminate(:econnrefused, _state) do
+    Logger.info("[#{__MODULE__}] Can't connect to PostgreSQL, terminating")
   end
 
   @impl true
@@ -121,7 +119,7 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
       Enum.map([epgsql_replication_config, epgsql_select_config], fn epgsql_config ->
         case :epgsql.connect(epgsql_config) do
           {:ok, epgsql_pid} -> epgsql_pid
-          {:error, _} -> nil
+          {:error, reason} -> reason
         end
       end)
 
@@ -153,8 +151,14 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
 
         {:noreply, state}
 
-      error ->
-        Logger.info("#{inspect(error)}")
+      _error ->
+        error =
+          if Enum.any?(epgsql_pids, fn pid -> pid == :econnrefused end) do
+            :econnrefused
+          else
+            :unknown_error
+          end
+
         Enum.each(epgsql_pids, &(is_pid(&1) && :epgsql.close(&1)))
 
         {:stop, error, state}
@@ -224,7 +228,7 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
   def handle_info(
         {:EXIT, _pid,
          {:error,
-          {:error, :error, "42704", :undefined_object, _error_msg,
+          {:error, :error, "42704", :undefined_object, error_msg,
            [
              file: _file,
              line: _line,
@@ -237,6 +241,8 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
           epgsql_select_pid: epgsql_select_pid
         } = state
       ) do
+    Logger.info("[#{__MODULE__}] #{error_msg}")
+
     :epgsql.close(epgsql_replication_pid)
     maybe_drop_replication_slot(state)
     :epgsql.close(epgsql_select_pid)
@@ -266,6 +272,8 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
         } = state
       )
       when is_binary(error_msg) do
+    Logger.info("[#{__MODULE__}] #{error_msg}")
+
     :epgsql.close(epgsql_replication_pid)
 
     stop_msg =
@@ -281,6 +289,21 @@ defmodule WalEx.Adapters.Postgres.EpgsqlServer do
     :epgsql.close(epgsql_select_pid)
 
     {:stop, stop_msg, state}
+  end
+
+  @impl true
+  def handle_info(
+        {:EXIT, _pid,
+         {:error,
+          {:error, :fatal, "57P01", :admin_shutdown, error_msg,
+           [file: "postgres.c", line: _line, routine: "ProcessInterrupts", severity: "FATAL"]}}} =
+          msg,
+        state
+      )
+      when is_binary(error_msg) do
+    Logger.info("[#{__MODULE__}] #{error_msg}")
+
+    {:stop, msg, state}
   end
 
   @impl true
