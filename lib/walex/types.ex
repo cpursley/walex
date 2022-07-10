@@ -5,7 +5,7 @@ defmodule WalEx.Types do
   def cast_record("f", "bool"), do: false
 
   def cast_record(record, <<"int", _::binary>>) when is_binary(record), do: to_integer(record)
-  def cast_record(record, <<"float", _::binary>>) when is_binary(record), do: to_float(record)
+  def cast_record(record, <<"float", _::binary>>) when is_binary(record), do: record |> Float.parse() |> elem(0)
 
   def cast_record(record, "numeric") when is_binary(record), do: Decimal.new(record)
   def cast_record(record, "decimal"), do: cast_record(record, "numeric")
