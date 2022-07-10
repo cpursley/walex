@@ -24,7 +24,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 0.7.3"}
+    {:walex, "~> 0.7.4"}
   ]
 end
 ```
