@@ -102,7 +102,7 @@ config :walex,
   # :temporary atom is also supported if you don't want Postgres keeping track of what you've acknowledged
   slot_name:  "example",
   max_replication_lag_in_mb: 0,
-  publications: ["events"],
+  publications: "[\"example\"]", # needs to be a json-decodable string
   # specify the changes you want to subscribe to. If you exclude, it will subscribe to all change events
   subscriptions: [:user_account, :todo],
   # include your modules for processing events (supervised)
