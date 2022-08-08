@@ -64,8 +64,12 @@ defmodule WalEx.Event do
 
   def cast(_event), do: nil
 
+  @doc """
+  When single event per table is expected
+  """
   def event(table_name, txn) do
-    with {:ok, [table]} <- events(table_name, txn),
+    with true <- has_tables?(table_name, txn),
+         [table] <- table(table_name, txn),
          casted_event <- cast(table),
          true <- Map.has_key?(casted_event, :__struct__) do
       {:ok, casted_event}
@@ -78,11 +82,18 @@ defmodule WalEx.Event do
     end
   end
 
-  defp events(table_name, txn) do
+  @doc """
+  When multiple events per table is expected (transaction)
+  """
+  def events(table_name, txn) do
     with true <- has_tables?(table_name, txn),
-         tables <- table(table_name, txn) do
-      {:ok, tables}
+         tables <- table(table_name, txn),
+         casted_events <- Enum.map(tables, &cast(&1)) do
+      {:ok, casted_events}
     else
+      {:error, error} ->
+        {:error, error}
+
       _ ->
         {:error, :no_events}
     end

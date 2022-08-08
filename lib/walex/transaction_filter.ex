@@ -167,7 +167,11 @@ defmodule WalEx.TransactionFilter do
 
   defp filter_changes(changes) do
     changes
-    |> Enum.filter(fn {_key, change} -> change.changed in [:primitive_change, :map_change] end)
+    |> Enum.filter(fn {_key, change} ->
+      if is_map(change) && Map.has_key?(change, :changed) do
+        change.changed in [:primitive_change, :map_change]
+      end
+    end)
     |> Enum.into(%{})
   end
 end
