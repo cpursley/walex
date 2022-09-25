@@ -1,11 +1,26 @@
 defmodule WalEx.Types do
-  import String
-
   def cast_record("t", "bool"), do: true
   def cast_record("f", "bool"), do: false
 
-  def cast_record(record, <<"int", _::binary>>) when is_binary(record), do: to_integer(record)
-  def cast_record(record, <<"float", _::binary>>) when is_binary(record), do: record |> Float.parse() |> elem(0)
+  def cast_record(record, <<"int", _::binary>>) when is_binary(record) do
+    case Integer.parse(record) do
+      {int, _} ->
+        int
+
+      :error ->
+        record
+    end
+  end
+
+  def cast_record(record, <<"float", _::binary>>) when is_binary(record) do
+    case Float.parse(record) do
+      {float, _} ->
+        float
+
+      :error ->
+        record
+    end
+  end
 
   def cast_record(record, "numeric") when is_binary(record), do: Decimal.new(record)
   def cast_record(record, "decimal"), do: cast_record(record, "numeric")
@@ -40,7 +55,6 @@ defmodule WalEx.Types do
   end
 
   # TODO: Add additional type castings and ability to load external types
-
   def cast_record(record, _column_type) do
     record
   end
