@@ -6,7 +6,7 @@ defmodule WalEx.Events do
   end
 
   def process(txn) do
-    GenServer.call(__MODULE__, {:process, txn})
+    GenServer.call(__MODULE__, {:process, txn}, :infinity)
   end
 
   @impl true
