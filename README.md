@@ -38,7 +38,7 @@ end
 ### Logical Replication
 
 WalEx only supports PostgreSQL. To get started, you first need to configure
-PostgreSQL for logical replication:
+PostgreSQL for [logical replication](https://www.crunchydata.com/blog/data-to-go-postgres-logical-replication):
 
 ```sql
 ALTER SYSTEM SET wal_level = 'logical';
