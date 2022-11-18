@@ -21,10 +21,10 @@ defmodule WalEx.Events do
   end
 
   defp process_events([module: modules], txn) when is_list(modules) do
-    Enum.each(modules, fn module -> apply(module, :process_event, [txn]) end)
+    Enum.each(modules, fn module -> apply(module, :process, [txn]) end)
   end
 
-  defp process_events([module: module], txn), do: apply(module, :process_event, [txn])
+  defp process_events([module: module], txn), do: apply(module, :process, [txn])
 
   defp process_events(nil, %{changes: [], commit_timestamp: _}), do: nil
 end

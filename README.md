@@ -28,7 +28,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 0.8.2"}
+    {:walex, "~> 0.9.0"}
   ]
 end
 ```
@@ -151,7 +151,9 @@ Example Module:
 defmodule ExampleApp.UserAccountEvent do
   import WalEx.{Event, TransactionFilter}
 
-  def process_event(txn) do
+  @behaviour WalEx.Event
+
+  def process(txn) do
     cond do
       insert_event?(:user_account, txn) ->
         {:ok, user_account} = event(:user_account, txn)
@@ -177,7 +179,7 @@ end
 Additional filter helpers available in the
 [WalEx.TransactionFilter](lib/walex/transaction_filter.ex) module.
 
-The process_event returns an `Event` Struct with changes provided by the
+The **process** _behaviour_ returns an `Event` Struct with changes provided by the
 [map_diff](https://github.com/Qqwy/elixir-map_diff) library (UPDATE example
 where _name_ field was changed):
 

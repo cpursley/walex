@@ -13,6 +13,11 @@ defmodule WalEx.Event do
   alias WalEx.Event
   alias WalEx.Adapters.Changes.{DeletedRecord, NewRecord, UpdatedRecord}
 
+  @doc """
+  Behaviour for processing event
+  """
+  @callback process(payload :: %WalEx.Adapters.Changes.Transaction{}) :: :ok | {:error, any()}
+
   def cast(%NewRecord{
         table: table,
         type: "INSERT",
