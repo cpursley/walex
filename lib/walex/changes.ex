@@ -3,7 +3,7 @@
 
 require Protocol
 
-defmodule WalEx.Adapters.Changes do
+defmodule WalEx.Changes do
   defmodule(Transaction, do: defstruct([:changes, :commit_timestamp]))
 
   defmodule(NewRecord,
@@ -30,9 +30,8 @@ defmodule WalEx.Adapters.Changes do
   defmodule(TruncatedRelation, do: defstruct([:type, :schema, :table, :commit_timestamp]))
 end
 
-Protocol.derive(Jason.Encoder, WalEx.Adapters.Changes.Transaction)
-Protocol.derive(Jason.Encoder, WalEx.Adapters.Changes.NewRecord)
-Protocol.derive(Jason.Encoder, WalEx.Adapters.Changes.UpdatedRecord)
-Protocol.derive(Jason.Encoder, WalEx.Adapters.Changes.DeletedRecord)
-Protocol.derive(Jason.Encoder, WalEx.Adapters.Changes.TruncatedRelation)
-Protocol.derive(Jason.Encoder, WalEx.Adapters.Postgres.Decoder.Messages.Relation.Column)
+Protocol.derive(Jason.Encoder, WalEx.Changes.Transaction)
+Protocol.derive(Jason.Encoder, WalEx.Changes.NewRecord)
+Protocol.derive(Jason.Encoder, WalEx.Changes.UpdatedRecord)
+Protocol.derive(Jason.Encoder, WalEx.Changes.DeletedRecord)
+Protocol.derive(Jason.Encoder, WalEx.Changes.TruncatedRelation)

@@ -1,7 +1,7 @@
 # This file steals liberally from https://github.com/supabase/realtime,
 # which in turn draws on https://github.com/cainophile/pgoutput_decoder/blob/master/lib/pgoutput_decoder.ex
 
-defmodule WalEx.Adapters.Postgres.Decoder do
+defmodule WalEx.Postgres.Decoder do
   defmodule Messages do
     defmodule(Begin, do: defstruct([:final_lsn, :commit_timestamp, :xid]))
     defmodule(Commit, do: defstruct([:flags, :lsn, :end_lsn, :commit_timestamp]))
@@ -50,7 +50,7 @@ defmodule WalEx.Adapters.Postgres.Decoder do
     Unsupported
   }
 
-  alias WalEx.Adapters.Postgres.OidDatabase
+  alias WalEx.Postgres.OidDatabase
 
   @doc """
   Parses logical replication messages from Postgres
@@ -58,7 +58,7 @@ defmodule WalEx.Adapters.Postgres.Decoder do
   ## Examples
 
       iex> decode_message(<<73, 0, 0, 96, 0, 78, 0, 2, 116, 0, 0, 0, 3, 98, 97, 122, 116, 0, 0, 0, 3, 53, 54, 48>>)
-      %WalEx.Adapters.Postgres.Decoder.Messages.Insert{relation_id: 24576, tuple_data: {"baz", "560"}}
+      %WalEx.Postgres.Decoder.Messages.Insert{relation_id: 24576, tuple_data: {"baz", "560"}}
 
   """
   def decode_message(message) when is_binary(message) do

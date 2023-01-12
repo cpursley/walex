@@ -58,4 +58,53 @@ defmodule WalEx.Types do
   def cast_record(record, _column_type) do
     record
   end
+
+  # defp cast_record(record, "int2") when is_binary(record), do: String.to_integer(record)
+  # defp cast_record(record, "int4") when is_binary(record), do: String.to_integer(record)
+  # defp cast_record(record, "int8") when is_binary(record), do: String.to_integer(record)
+
+  # defp cast_record(record, "numeric") when is_binary(record) do
+  #   if String.contains?(record, ".") do
+  #     String.to_float(record)
+  #   else
+  #     String.to_integer(record)
+  #   end
+  # end
+
+  # defp cast_record(record, "json") when is_binary(record) do
+  #   case Jason.decode(record) do
+  #     {:ok, json} ->
+  #       Jason.decode!(json)
+
+  #     _ ->
+  #       record
+  #   end
+  # end
+
+  # # Integer Array - this assumes a single non-nested array
+  # # This is brittle, I imagine there's a safer way to handle arrays..
+  # defp cast_record(<<123>> <> record, "_int4") when is_binary(record) do
+  #   record
+  #   |> String.replace(["{", "}"], "")
+  #   |> String.split(",")
+  #   |> Enum.map(&String.to_integer/1)
+  # end
+
+  # # Text Array - this assumes a single non-nested array
+  # defp cast_record(<<123>> <> record, "_text") when is_binary(record) do
+  #   record
+  #   |> String.replace(["{", "}"], "")
+  #   |> String.split(",")
+  # end
+
+  # # TODO: Before extracting out WalEx, create a dynamic function that can take custom decoders
+  # defp cast_record(record, "geography") when is_binary(record) do
+  #   case Geo.WKB.decode(record) do
+  #     {:ok, geo} ->
+  #       geo
+
+  #     _ ->
+  #       record
+  #   end
+  # end
 end

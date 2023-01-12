@@ -2,11 +2,13 @@
 # which in turn draws on https://github.com/cainophile/cainophile
 
 defmodule WalEx.TransactionFilter do
-  alias WalEx.Adapters.Changes.Transaction
+  alias WalEx.Changes.Transaction
 
   defmodule(Filter, do: defstruct([:schema, :table, :condition]))
 
   require Logger
+
+  @subscriptions Application.compile_env(:walex, WalEx)[:subscriptions]
 
   @doc """
   Predicate to check if the filter matches the transaction.
@@ -14,11 +16,11 @@ defmodule WalEx.TransactionFilter do
   ## Examples
 
       iex> txn = %Transaction{changes: [
-      ...>   %WalEx.Adapters.Changes.NewRecord{
+      ...>   %WalEx.Changes.NewRecord{
       ...>     columns: [
-      ...>       %WalEx.Adapters.Postgres.Decoder.Messages.Relation.Column{flags: [:key], name: "id", type: "int8", type_modifier: 4294967295},
-      ...>       %WalEx.Adapters.Postgres.Decoder.Messages.Relation.Column{flags: [], name: "details", type: "text", type_modifier: 4294967295},
-      ...>       %WalEx.Adapters.Postgres.Decoder.Messages.Relation.Column{flags: [], name: "user_id", type: "int8", type_modifier: 4294967295}
+      ...>       %WalEx.Postgres.Decoder.Messages.Relation.Column{flags: [:key], name: "id", type: "int8", type_modifier: 4294967295},
+      ...>       %WalEx.Postgres.Decoder.Messages.Relation.Column{flags: [], name: "details", type: "text", type_modifier: 4294967295},
+      ...>       %WalEx.Postgres.Decoder.Messages.Relation.Column{flags: [], name: "user_id", type: "int8", type_modifier: 4294967295}
       ...>     ],
       ...>     commit_timestamp: nil,
       ...>     record: %{"details" => "The SCSI system is down, program the haptic microchip so we can back up the SAS circuit!", "id" => "14", "user_id" => "1"},
@@ -146,13 +148,7 @@ defmodule WalEx.TransactionFilter do
   def has_tables?(_tables, _txn), do: false
 
   defp subscribes?(change) do
-    case Application.get_env(:walex, :subscriptions) do
-      nil ->
-        true
-
-      subscriptions ->
-        String.to_atom(change.table) in subscriptions
-    end
+    String.to_atom(change.table) in @subscriptions
   end
 
   def changes(old_record, record) do

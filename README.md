@@ -28,7 +28,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 0.9.0"}
+    {:walex, "~> 1.0.0"}
   ]
 end
 ```
@@ -63,7 +63,7 @@ All tables:
 CREATE PUBLICATION events FOR ALL TABLES;
 ```
 
-Specific tables:
+Or specific tables:
 
 ```sql
 CREATE PUBLICATION events FOR TABLE user_account, todo;
@@ -107,24 +107,15 @@ Config:
 ```elixir
 # config.exs
 
-config :walex,
-  db_host: "localhost",
-  db_user: "postgres",
-  db_name: "postgres",
-  db_password: "postgres",
-  db_port: "5432",
-  db_ssl: true,
-  db_ip_version: "ipv6",
-  # :temporary atom is also supported if you don't want Postgres keeping track
-  # of what you've acknowledged
-  slot_name:  "example",
-  max_replication_lag_in_mb: 0,
-  publications: "[\"example\"]", # needs to be a json-decodable string
-  # specify the changes you want to subscribe to. If you exclude, it will
-  # subscribe to all change events
+config :walex, WalEx,
+  hostname: "localhost",
+  username: "postgres",
+  password: "postgres",
+  port: "5432",
+  database: "postgres",
+  publication: "events",
   subscriptions: [:user_account, :todo],
-  # include your modules for processing events (supervised)
-  modules: [ExampleApp.UserAcountEvent, ExampleApp.TodoEvent]
+  modules: ExampleApp.UserAcountEvent, ExampleApp.TodoEvent]
 ```
 
 Supervisor:

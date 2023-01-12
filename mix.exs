@@ -4,7 +4,7 @@ defmodule WalEx.MixProject do
   def project do
     [
       app: :walex,
-      version: "0.9.0",
+      version: "1.0.0",
       elixir: "~> 1.13",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -26,9 +26,9 @@ defmodule WalEx.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:postgrex, ">= 0.0.0"},
       {:decimal, "~> 2.0"},
-      {:epgsql, "~> 4.6.1"},
-      {:ex_doc, "~> 0.29.0", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.29.1", only: :dev, runtime: false},
       {:jason, "~> 1.3"},
       {:map_diff, "~> 1.3"},
       {:retry, "~> 0.17.0"},
@@ -45,7 +45,7 @@ defmodule WalEx.MixProject do
       files: ~w(lib test .formatter.exs mix.exs README* LICENSE*),
       maintainers: ["Chase Pursley"],
       licenses: ["Apache-2.0"],
-      links: %{"GitHub" => "https://github.com/elixir-ecto/postgrex"}
+      links: %{"GitHub" => "https://github.com/cpursley/walex"}
     ]
   end
 end

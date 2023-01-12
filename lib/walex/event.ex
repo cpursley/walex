@@ -11,14 +11,14 @@ defmodule WalEx.Event do
   import WalEx.TransactionFilter
 
   alias WalEx.Event
-  alias WalEx.Adapters.Changes.{DeletedRecord, NewRecord, UpdatedRecord}
+  alias WalEx.Changes
 
   @doc """
   Behaviour for processing event
   """
-  @callback process(payload :: %WalEx.Adapters.Changes.Transaction{}) :: :ok | {:error, any()}
+  @callback process(payload :: %Changes.Transaction{}) :: :ok | {:error, any()}
 
-  def cast(%NewRecord{
+  def cast(%Changes.NewRecord{
         table: table,
         type: "INSERT",
         record: record,
@@ -34,7 +34,7 @@ defmodule WalEx.Event do
     }
   end
 
-  def cast(%UpdatedRecord{
+  def cast(%Changes.UpdatedRecord{
         table: table,
         type: "UPDATE",
         record: record,
@@ -51,7 +51,7 @@ defmodule WalEx.Event do
     }
   end
 
-  def cast(%DeletedRecord{
+  def cast(%Changes.DeletedRecord{
         table: table,
         type: "DELETE",
         old_record: old_record,
