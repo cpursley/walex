@@ -21,22 +21,18 @@ defmodule WalEx.ReplicationServer do
 
   @impl true
   def init(:ok) do
-    IO.inspect("ReplicationServer init")
     {:ok, _pid} = ReplicationPublisher.start_link([])
     {:ok, %{step: :disconnected}}
   end
 
   @impl true
   def handle_connect(state) do
-    IO.inspect("ReplicationServer handle_connect")
     query = "CREATE_REPLICATION_SLOT postgrex TEMPORARY LOGICAL pgoutput NOEXPORT_SNAPSHOT"
     {:query, query, %{state | step: :create_slot}}
   end
 
   @impl true
   def handle_result(results, %{step: :create_slot} = state) when is_list(results) do
-    IO.inspect("ReplicationServer handle_result")
-
     query =
       "START_REPLICATION SLOT postgrex LOGICAL 0/0 (proto_version '1', publication_names '#{@publication}')"
 
@@ -46,7 +42,6 @@ defmodule WalEx.ReplicationServer do
   @impl true
   # https://www.postgresql.org/docs/14/protocol-replication.html
   def handle_data(<<?w, _wal_start::64, _wal_end::64, _clock::64, rest::binary>>, state) do
-    IO.inspect("ReplicationServer handle_data 1")
     message = Decoder.decode_message(rest)
 
     ReplicationPublisher.process_message(message)
@@ -55,8 +50,6 @@ defmodule WalEx.ReplicationServer do
   end
 
   def handle_data(<<?k, wal_end::64, _clock::64, reply>>, state) do
-    IO.inspect("ReplicationServer handle_data 2")
-
     messages =
       case reply do
         1 -> [<<?r, wal_end + 1::64, wal_end + 1::64, wal_end + 1::64, current_time()::64, 0>>]

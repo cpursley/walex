@@ -32,7 +32,6 @@ defmodule WalEx.ReplicationPublisher do
 
   @impl true
   def init(_) do
-    IO.inspect("ReplicationPublisher init")
     Process.flag(:message_queue_data, :off_heap)
 
     {:ok, %State{}}
@@ -43,8 +42,6 @@ defmodule WalEx.ReplicationPublisher do
         {:message, %Messages.Begin{final_lsn: final_lsn, commit_timestamp: commit_timestamp}},
         state
       ) do
-    IO.inspect("ReplicationPublisher handle_cast Messages.Begin")
-
     updated_state = %State{
       state
       | transaction: {
@@ -62,7 +59,6 @@ defmodule WalEx.ReplicationPublisher do
         %State{transaction: {current_txn_lsn, txn}, relations: _relations} = state
       )
       when commit_lsn == current_txn_lsn do
-    IO.inspect("ReplicationPublisher handle_cast Messages.Commit")
     Events.process(txn)
 
     %{state | transaction: nil}
@@ -72,7 +68,6 @@ defmodule WalEx.ReplicationPublisher do
 
   @impl true
   def handle_cast({:message, %Messages.Type{} = msg}, state) do
-    IO.inspect("ReplicationPublisher handle_cast Messages.Type")
     updated_state = %{state | types: Map.put(state.types, msg.id, msg.name)}
 
     {:noreply, updated_state}
@@ -80,8 +75,6 @@ defmodule WalEx.ReplicationPublisher do
 
   @impl true
   def handle_cast({:message, %Messages.Relation{} = msg}, state) do
-    IO.inspect("ReplicationPublisher handle_cast Messages.Relation")
-
     updated_columns =
       Enum.map(msg.columns, fn message ->
         if Map.has_key?(state.types, message.type) do
@@ -106,11 +99,9 @@ defmodule WalEx.ReplicationPublisher do
         } = state
       )
       when is_map(relations) do
-    IO.inspect("ReplicationPublisher handle_cast Messages.Insert")
-
     case Map.fetch(relations, relation_id) do
       {:ok, %{columns: columns, namespace: namespace, name: name}} when is_list(columns) ->
-        data = data_tuple_to_map(columns, tuple_data) |> IO.inspect()
+        data = data_tuple_to_map(columns, tuple_data)
 
         new_record = %Changes.NewRecord{
           type: "INSERT",
@@ -147,8 +138,6 @@ defmodule WalEx.ReplicationPublisher do
         } = state
       )
       when is_map(relations) do
-    IO.inspect("ReplicationPublisher handle_cast Messages.Update")
-
     case Map.fetch(relations, relation_id) do
       {:ok, %{columns: columns, namespace: namespace, name: name}} when is_list(columns) ->
         old_data = data_tuple_to_map(columns, old_tuple_data)
@@ -190,8 +179,6 @@ defmodule WalEx.ReplicationPublisher do
         } = state
       )
       when is_map(relations) do
-    IO.inspect("ReplicationPublisher handle_cast Messages.Delete")
-
     case Map.fetch(relations, relation_id) do
       {:ok, %{columns: columns, namespace: namespace, name: name}} when is_list(columns) ->
         data = data_tuple_to_map(columns, old_tuple_data || changed_key_tuple_data)
@@ -226,8 +213,6 @@ defmodule WalEx.ReplicationPublisher do
         } = state
       )
       when is_list(truncated_relations) and is_list(changes) and is_map(relations) do
-    IO.inspect("ReplicationPublisher handle_cast Messages.Truncate")
-
     new_changes =
       Enum.reduce(truncated_relations, changes, fn truncated_relation, acc ->
         case Map.fetch(relations, truncated_relation) do
@@ -255,7 +240,6 @@ defmodule WalEx.ReplicationPublisher do
 
   @impl true
   def handle_cast({:message, _message}, state) do
-    IO.inspect("ReplicationPublisher handle_cast All Others")
     :noop
 
     {:noreply, state}
