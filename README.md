@@ -115,7 +115,19 @@ config :walex, WalEx,
   database: "postgres",
   publication: "events",
   subscriptions: [:user_account, :todo],
-  modules: ExampleApp.UserAcountEvent, ExampleApp.TodoEvent]
+  modules: [ExampleApp.UserAcountEvent, ExampleApp.TodoEvent]
+```
+
+It is also possible to just define the URL configuration for the database
+
+```elixir
+# config.exs
+
+config :walex, WalEx,
+  url: "postgres://username:password@hostname:port/database"
+  publication: "events",
+  subscriptions: [:user_account, :todo],
+  modules: [ExampleApp.UserAcountEvent, ExampleApp.TodoEvent]
 ```
 
 Supervisor:
