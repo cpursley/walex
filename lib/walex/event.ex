@@ -1,4 +1,9 @@
 defmodule WalEx.Event do
+  import WalEx.TransactionFilter
+
+  alias WalEx.Changes
+  alias WalEx.Event
+
   defstruct(
     table: nil,
     type: nil,
@@ -7,11 +12,6 @@ defmodule WalEx.Event do
     changes: nil,
     commit_timestamp: nil
   )
-
-  import WalEx.TransactionFilter
-
-  alias WalEx.Event
-  alias WalEx.Changes
 
   @doc """
   Behaviour for processing event
@@ -72,8 +72,8 @@ defmodule WalEx.Event do
   @doc """
   When single event per table is expected
   """
-  def event(table_name, txn) do
-    with true <- has_tables?(table_name, txn),
+  def event(table_name, txn, app_name) do
+    with true <- has_tables?(table_name, txn, app_name),
          [table] <- table(table_name, txn),
          casted_event <- cast(table),
          true <- Map.has_key?(casted_event, :__struct__) do
@@ -90,8 +90,8 @@ defmodule WalEx.Event do
   @doc """
   When multiple events per table is expected (transaction)
   """
-  def events(table_name, txn) do
-    with true <- has_tables?(table_name, txn),
+  def events(table_name, txn, app_name) do
+    with true <- has_tables?(table_name, txn, app_name),
          tables <- table(table_name, txn),
          casted_events <- Enum.map(tables, &cast(&1)) do
       {:ok, casted_events}

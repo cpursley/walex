@@ -1,10 +1,14 @@
-# This file steals liberally from https://github.com/supabase/realtime,
-# which in turn draws on https://github.com/cainophile/cainophile
-
 defmodule WalEx.ReplicationPublisher do
   @moduledoc """
   Publishes messages from Replication to Events
   """
+  use GenServer
+
+  alias WalEx.Changes
+  alias WalEx.Events
+  alias WalEx.Postgres.Decoder.Messages
+  alias WalEx.Types
+
   defmodule(State,
     do:
       defstruct(
@@ -16,18 +20,12 @@ defmodule WalEx.ReplicationPublisher do
 
   defstruct [:relations]
 
-  use GenServer
-
-  alias WalEx.{Events, Types}
-  alias WalEx.Changes
-  alias WalEx.Postgres.Decoder.Messages
-
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
-  def process_message(message) do
-    GenServer.cast(__MODULE__, {:message, message})
+  def process_message(message, app_name) do
+    GenServer.cast(__MODULE__, %{message: message, app_name: app_name})
   end
 
   @impl true
@@ -39,7 +37,7 @@ defmodule WalEx.ReplicationPublisher do
 
   @impl true
   def handle_cast(
-        {:message, %Messages.Begin{final_lsn: final_lsn, commit_timestamp: commit_timestamp}},
+        %{message: %Messages.Begin{final_lsn: final_lsn, commit_timestamp: commit_timestamp}},
         state
       ) do
     updated_state = %State{
@@ -55,11 +53,11 @@ defmodule WalEx.ReplicationPublisher do
 
   @impl true
   def handle_cast(
-        {:message, %Messages.Commit{lsn: commit_lsn}},
+        %{message: %Messages.Commit{lsn: commit_lsn}, app_name: app_name},
         %State{transaction: {current_txn_lsn, txn}, relations: _relations} = state
       )
       when commit_lsn == current_txn_lsn do
-    Events.process(txn)
+    Events.process(txn, app_name)
 
     %{state | transaction: nil}
 
@@ -67,14 +65,14 @@ defmodule WalEx.ReplicationPublisher do
   end
 
   @impl true
-  def handle_cast({:message, %Messages.Type{} = msg}, state) do
+  def handle_cast(%{message: %Messages.Type{} = msg}, state) do
     updated_state = %{state | types: Map.put(state.types, msg.id, msg.name)}
 
     {:noreply, updated_state}
   end
 
   @impl true
-  def handle_cast({:message, %Messages.Relation{} = msg}, state) do
+  def handle_cast(%{message: %Messages.Relation{} = msg}, state) do
     updated_columns =
       Enum.map(msg.columns, fn message ->
         if Map.has_key?(state.types, message.type) do
@@ -92,7 +90,7 @@ defmodule WalEx.ReplicationPublisher do
 
   @impl true
   def handle_cast(
-        {:message, %Messages.Insert{relation_id: relation_id, tuple_data: tuple_data}},
+        %{message: %Messages.Insert{relation_id: relation_id, tuple_data: tuple_data}},
         %State{
           transaction: {lsn, %{commit_timestamp: commit_timestamp, changes: changes} = txn},
           relations: relations
@@ -126,12 +124,13 @@ defmodule WalEx.ReplicationPublisher do
 
   @impl true
   def handle_cast(
-        {:message,
-         %Messages.Update{
-           relation_id: relation_id,
-           old_tuple_data: old_tuple_data,
-           tuple_data: tuple_data
-         }},
+        %{
+          message: %Messages.Update{
+            relation_id: relation_id,
+            old_tuple_data: old_tuple_data,
+            tuple_data: tuple_data
+          }
+        },
         %State{
           relations: relations,
           transaction: {lsn, %{commit_timestamp: commit_timestamp, changes: changes} = txn}
@@ -167,12 +166,13 @@ defmodule WalEx.ReplicationPublisher do
 
   @impl true
   def handle_cast(
-        {:message,
-         %Messages.Delete{
-           relation_id: relation_id,
-           old_tuple_data: old_tuple_data,
-           changed_key_tuple_data: changed_key_tuple_data
-         }},
+        %{
+          message: %Messages.Delete{
+            relation_id: relation_id,
+            old_tuple_data: old_tuple_data,
+            changed_key_tuple_data: changed_key_tuple_data
+          }
+        },
         %State{
           relations: relations,
           transaction: {lsn, %{commit_timestamp: commit_timestamp, changes: changes} = txn}
@@ -206,7 +206,7 @@ defmodule WalEx.ReplicationPublisher do
 
   @impl true
   def handle_cast(
-        {:message, %Messages.Truncate{truncated_relations: truncated_relations}},
+        %{message: %Messages.Truncate{truncated_relations: truncated_relations}},
         %State{
           relations: relations,
           transaction: {lsn, %{commit_timestamp: commit_timestamp, changes: changes} = txn}
@@ -239,7 +239,7 @@ defmodule WalEx.ReplicationPublisher do
   end
 
   @impl true
-  def handle_cast({:message, _message}, state) do
+  def handle_cast(%{message: _message}, state) do
     :noop
 
     {:noreply, state}
@@ -252,18 +252,7 @@ defmodule WalEx.ReplicationPublisher do
       case column_map do
         %Messages.Relation.Column{name: column_name, type: column_type}
         when is_binary(column_name) and is_binary(column_type) ->
-          try do
-            {:ok, Kernel.elem(tuple_data, index)}
-          rescue
-            ArgumentError -> :error
-          end
-          |> case do
-            {:ok, record} ->
-              {:cont, Map.put(acc, column_name, Types.cast_record(record, column_type))}
-
-            :error ->
-              {:halt, acc}
-          end
+          validate_tuple_and_handle_response(tuple_data, index, acc, column_name, column_type)
 
         _ ->
           {:cont, acc}
@@ -273,4 +262,20 @@ defmodule WalEx.ReplicationPublisher do
   end
 
   defp data_tuple_to_map(_columns, _tuple_data), do: %{}
+
+  defp validate_tuple_and_handle_response(tuple_data, index, acc, column_name, column_type) do
+    case validate_tuple(tuple_data, index) do
+      {:ok, record} ->
+        {:cont, Map.put(acc, column_name, Types.cast_record(record, column_type))}
+
+      :error ->
+        {:halt, acc}
+    end
+  end
+
+  defp validate_tuple(tuple_data, index) do
+    {:ok, Kernel.elem(tuple_data, index)}
+  rescue
+    ArgumentError -> :error
+  end
 end

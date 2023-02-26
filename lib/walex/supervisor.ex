@@ -1,75 +1,42 @@
 defmodule WalEx.Supervisor do
   use Supervisor
 
-  @config Application.compile_env(:walex, WalEx)
+  alias WalEx.Configs, as: WalExConfigs
+  alias WalEx.DatabaseReplicationSupervisor
+  alias WalEx.Events
 
-  def child_spec(config) do
+  def child_spec(opts) do
     %{
       id: __MODULE__,
-      start: {__MODULE__, :start_link, [config]}
+      start: {__MODULE__, :start_link, [opts]}
     }
   end
 
-  def start_link(config) do
-    Supervisor.start_link(__MODULE__, config, name: __MODULE__)
+  def start_link(opts) do
+    WalEx.Registry.start_registry()
+
+    app_name = Keyword.get(opts, :name)
+
+    name = WalEx.Registry.set_name(:set_supervisor, __MODULE__, app_name)
+
+    Supervisor.start_link(__MODULE__, configs: opts, name: name)
   end
 
   @impl true
-  def init(_) do
-    config_from_url = if has_url?(), do: parse_url(@config[:url])
-
-    children = [
-      {
-        WalEx.DatabaseReplicationSupervisor,
-        hostname: @config[:hostname] || config_from_url[:hostname],
-        username: @config[:username] || config_from_url[:username],
-        password: @config[:password] || config_from_url[:password],
-        port: @config[:port] || config_from_url[:port],
-        database: @config[:database] || config_from_url[:database],
-        subscriptions: @config[:subscriptions],
-        publication: @config[:publication]
-      },
-      {
-        WalEx.Events,
-        module: @config[:modules]
-      }
-    ]
-
-    Supervisor.init(children, strategy: :one_for_one)
+  def init(opts) do
+    opts
+    |> set_children()
+    |> Supervisor.init(strategy: :one_for_one)
   end
 
-  defp has_url?, do: is_bitstring(@config[:url]) and @config[:url] != ""
+  defp set_children(opts) do
+    configs = Keyword.get(opts, :configs)
+    app_name = Keyword.get(configs, :name)
 
-  defp parse_url(""), do: []
+    walex_configs = [{WalExConfigs, configs: configs}]
+    walex_db_replication_supervisor = [{DatabaseReplicationSupervisor, app_name: app_name}]
+    walex_event = if is_nil(Process.whereis(Events)), do: [{Events, []}], else: []
 
-  defp parse_url(url) when is_binary(url) do
-    info = URI.parse(url)
-
-    if is_nil(info.host), do: raise("host is not present")
-
-    if is_nil(info.path) or not (info.path =~ ~r"^/([^/])+$"),
-      do: raise("path should be a database name")
-
-    destructure [username, password], info.userinfo && String.split(info.userinfo, ":")
-    "/" <> database = info.path
-
-    url_opts = [
-      username: username,
-      password: password,
-      database: database,
-      port: info.port
-    ]
-
-    url_opts = put_hostname_if_present(url_opts, info.host)
-
-    for {k, v} <- url_opts,
-        not is_nil(v),
-        do: {k, if(is_binary(v), do: URI.decode(v), else: v)}
-  end
-
-  defp put_hostname_if_present(keyword, ""), do: keyword
-
-  defp put_hostname_if_present(keyword, hostname) when is_binary(hostname) do
-    Keyword.put(keyword, :hostname, hostname)
+    walex_configs ++ walex_db_replication_supervisor ++ walex_event
   end
 end
