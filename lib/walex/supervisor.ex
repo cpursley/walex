@@ -13,9 +13,11 @@ defmodule WalEx.Supervisor do
   end
 
   def start_link(opts) do
-    WalEx.Registry.start_registry()
+    validate_opts(opts)
 
     app_name = Keyword.get(opts, :name)
+
+    {:ok, _pid} = WalEx.Registry.start_registry()
 
     name = WalEx.Registry.set_name(:set_supervisor, __MODULE__, app_name)
 
@@ -27,6 +29,25 @@ defmodule WalEx.Supervisor do
     opts
     |> set_children()
     |> Supervisor.init(strategy: :one_for_one)
+  end
+
+  defp validate_opts(opts) do
+    db_configs = [:hostname, :username, :password, :port, :database]
+    other_configs = [:subscriptions, :publication, :modules, :name]
+
+    missing_other_configs = Enum.filter(other_configs, &(not Keyword.has_key?(opts, &1)))
+
+    missing_db_configs =
+      case Keyword.get(opts, :url) do
+        nil -> Enum.filter(db_configs, &(not Keyword.has_key?(opts, &1)))
+        _has_url -> []
+      end
+
+    missing_configs = missing_db_configs ++ missing_other_configs
+
+    if not Enum.empty?(missing_configs) do
+      raise "Following configs are missing: #{inspect(missing_configs)}"
+    end
   end
 
   defp set_children(opts) do
