@@ -107,7 +107,7 @@ Config:
 ```elixir
 # config.exs
 
-config :walex, ExampleApp,
+config :my_app, WalEx,
   hostname: "localhost",
   username: "postgres",
   password: "postgres",
@@ -115,8 +115,8 @@ config :walex, ExampleApp,
   database: "postgres",
   publication: "events",
   subscriptions: [:user_account, :todo],
-  modules: [ExampleApp.UserAcountEvent, ExampleApp.TodoEvent],
-  name: ExampleApp
+  modules: [MyApp.UserAcountEvent, MyApp.TodoEvent],
+  name: MyApp
 ```
 
 It is also possible to just define the URL configuration for the database
@@ -124,27 +124,27 @@ It is also possible to just define the URL configuration for the database
 ```elixir
 # config.exs
 
-config :walex, ExampleApp,
+config :my_app, WalEx,
   url: "postgres://username:password@hostname:port/database"
   publication: "events",
   subscriptions: [:user_account, :todo],
-  modules: [ExampleApp.UserAcountEvent, ExampleApp.TodoEvent],
-  name: ExampleApp
+  modules: [MyApp.UserAcountEvent, MyApp.TodoEvent],
+  name: MyApp
 ```
 
 Supervisor:
 
 ```elixir
-defmodule ExampleApp.Application do
+defmodule MyApp.Application do
   use Application
 
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
-      {WalEx.Supervisor, Application.get_env(:walex, ExampleApp)}
+      {WalEx.Supervisor, Application.get_env(:walex, MyApp)}
     ]
 
-    opts = [strategy: :one_for_one, name: ExampleApp.Supervisor]
+    opts = [strategy: :one_for_one, name: MyApp.Supervisor]
     Supervisor.start_link(children, opts)
   end
 end
@@ -153,7 +153,7 @@ end
 Example Module:
 
 ```elixir
-defmodule ExampleApp.UserAccountEvent do
+defmodule MyApp.UserAccountEvent do
   import WalEx.{Event, TransactionFilter}
 
   @behaviour WalEx.Event
@@ -161,17 +161,17 @@ defmodule ExampleApp.UserAccountEvent do
   def process(txn) do
     cond do
       insert_event?(:user_account, txn) ->
-        {:ok, user_account} = event(:user_account, txn, ExampleApp)
+        {:ok, user_account} = event(:user_account, txn, MyApp)
         IO.inspect(user_account_insert_event: user_account)
         # do something with user_account data
 
       update_event?(:user_account, txn) ->
-        {:ok, user_account} = event(:user_account, txn, ExampleApp)
+        {:ok, user_account} = event(:user_account, txn, MyApp)
         IO.inspect(user_account_update_event: user_account)
 
       # you can also specify the relation
       delete_event?("public.user_account", txn) ->
-        {:ok, user_account} = event(:user_account, txn, ExampleApp)
+        {:ok, user_account} = event(:user_account, txn, MyApp)
         IO.inspect(user_account_delete_event: user_account)
 
       true ->
