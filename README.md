@@ -141,7 +141,7 @@ defmodule MyApp.Application do
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
-      {WalEx.Supervisor, Application.get_env(:walex, MyApp)}
+      {WalEx.Supervisor, Application.get_env(:my_app, WalEx)}
     ]
 
     opts = [strategy: :one_for_one, name: MyApp.Supervisor]
@@ -154,24 +154,24 @@ Example Module:
 
 ```elixir
 defmodule MyApp.UserAccountEvent do
-  import WalEx.{Event, TransactionFilter}
+  use WalEx.Event, name: MyApp
 
-  @behaviour WalEx.Event
+  import WalEx.TransactionFilter
 
   def process(txn) do
     cond do
       insert_event?(:user_account, txn) ->
-        {:ok, user_account} = event(:user_account, txn, MyApp)
+        {:ok, user_account} = event(:user_account, txn)
         IO.inspect(user_account_insert_event: user_account)
         # do something with user_account data
 
       update_event?(:user_account, txn) ->
-        {:ok, user_account} = event(:user_account, txn, MyApp)
+        {:ok, user_account} = event(:user_account, txn)
         IO.inspect(user_account_update_event: user_account)
 
       # you can also specify the relation
       delete_event?("public.user_account", txn) ->
-        {:ok, user_account} = event(:user_account, txn, MyApp)
+        {:ok, user_account} = event(:user_account, txn)
         IO.inspect(user_account_delete_event: user_account)
 
       true ->
