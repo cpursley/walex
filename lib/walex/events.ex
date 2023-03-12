@@ -10,7 +10,7 @@ defmodule WalEx.Events do
   end
 
   @impl true
-  def init(%{}) do
+  def init(_) do
     {:ok, %{}}
   end
 
