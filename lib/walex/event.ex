@@ -18,6 +18,17 @@ defmodule WalEx.Event do
   """
   @callback process(payload :: %Changes.Transaction{}) :: :ok | {:error, any()}
 
+  defmacro __using__(opts) do
+    app_name = Keyword.get(opts, :name)
+
+    quote do
+      @behaviour Event
+
+      def event(table_name, txn), do: Event.event(table_name, txn, unquote(app_name))
+      def events(table_name, txn), do: Event.events(table_name, txn, unquote(app_name))
+    end
+  end
+
   def cast(%Changes.NewRecord{
         table: table,
         type: "INSERT",
