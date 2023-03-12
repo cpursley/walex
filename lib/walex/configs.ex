@@ -14,14 +14,10 @@ defmodule WalEx.Configs do
     Agent.start_link(fn -> configs end, name: name)
   end
 
-  def get_configs(app_name, []) do
-    WalEx.Registry.get_state(:get_agent, __MODULE__, app_name)
-  end
+  def get_configs(app_name, keys \\ []) when is_list(keys) do
+    configs = WalEx.Registry.get_state(:get_agent, __MODULE__, app_name)
 
-  def get_configs(app_name, keys) do
-    app_name
-    |> get_configs([])
-    |> Keyword.take(keys)
+    if Enum.empty?(keys), do: configs, else: Keyword.take(configs, keys)
   end
 
   defp build_app_configs(configs) do

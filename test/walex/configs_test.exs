@@ -43,7 +43,7 @@ defmodule WalEx.ConfigsTest do
       :ok
     end
 
-    test "should return all configs when second parameter is '[]'" do
+    test "should return all configs when second parameter is not sent" do
       assert [
                hostname: "hostname",
                username: "username",
@@ -54,7 +54,7 @@ defmodule WalEx.ConfigsTest do
                publication: "publication",
                modules: ["modules"],
                name: :test_name
-             ] == Configs.get_configs(:test_name, [])
+             ] == Configs.get_configs(:test_name)
     end
 
     test "should return only selected configs when second parameter is require a filter" do
