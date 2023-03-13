@@ -4,11 +4,9 @@
 defmodule WalEx.TransactionFilter do
   alias WalEx.Changes.Transaction
 
-  defmodule(Filter, do: defstruct([:schema, :table, :condition]))
-
   require Logger
 
-  @subscriptions Application.compile_env(:walex, WalEx)[:subscriptions]
+  defmodule(Filter, do: defstruct([:schema, :table, :condition]))
 
   @doc """
   Predicate to check if the filter matches the transaction.
@@ -127,28 +125,34 @@ defmodule WalEx.TransactionFilter do
 
   def table(_table, _txn), do: false
 
-  def has_table?(change, table_name), do: String.to_atom(change.table) == table_name
+  defp has_table?(change, table_name), do: String.to_atom(change.table) == table_name
 
-  def has_tables?(tables, %Transaction{changes: _changes} = txn) when is_list(tables) do
+  def has_tables?(tables, %Transaction{changes: _changes} = txn, app_name) when is_list(tables) do
     tables
-    |> Enum.map(fn table -> has_tables?(table, txn) end)
+    |> Enum.map(fn table -> has_tables?(table, txn, app_name) end)
     |> Enum.all?()
   end
 
-  def has_tables?(table_name, %Transaction{changes: changes}) when is_atom(table_name) do
+  def has_tables?(table_name, %Transaction{changes: changes}, app_name)
+      when is_atom(table_name) do
     Enum.any?(changes, fn change ->
-      has_table?(change, table_name) && subscribes?(change)
+      has_table?(change, table_name) && subscribes?(change, app_name)
     end)
   end
 
-  def has_tables?(table_name, txn) when is_binary(table_name) do
-    has_tables?(String.to_atom(table_name), txn)
+  def has_tables?(table_name, txn, app_name) when is_binary(table_name) do
+    has_tables?(String.to_atom(table_name), txn, app_name)
   end
 
-  def has_tables?(_tables, _txn), do: false
+  def has_tables?(_tables, _txn, _app_name), do: false
 
-  defp subscribes?(change) do
-    String.to_atom(change.table) in @subscriptions
+  defp subscribes?(change, app_name) do
+    subscriptions =
+      app_name
+      |> WalEx.Configs.get_configs([:subscriptions])
+      |> Keyword.get(:subscriptions)
+
+    String.to_atom(change.table) in subscriptions
   end
 
   def changes(old_record, record) do

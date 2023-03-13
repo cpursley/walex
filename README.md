@@ -107,7 +107,7 @@ Config:
 ```elixir
 # config.exs
 
-config :walex, WalEx,
+config :my_app, WalEx,
   hostname: "localhost",
   username: "postgres",
   password: "postgres",
@@ -115,7 +115,8 @@ config :walex, WalEx,
   database: "postgres",
   publication: "events",
   subscriptions: [:user_account, :todo],
-  modules: [ExampleApp.UserAcountEvent, ExampleApp.TodoEvent]
+  modules: [MyApp.UserAcountEvent, MyApp.TodoEvent],
+  name: MyApp
 ```
 
 It is also possible to just define the URL configuration for the database
@@ -123,26 +124,27 @@ It is also possible to just define the URL configuration for the database
 ```elixir
 # config.exs
 
-config :walex, WalEx,
+config :my_app, WalEx,
   url: "postgres://username:password@hostname:port/database"
   publication: "events",
   subscriptions: [:user_account, :todo],
-  modules: [ExampleApp.UserAcountEvent, ExampleApp.TodoEvent]
+  modules: [MyApp.UserAcountEvent, MyApp.TodoEvent],
+  name: MyApp
 ```
 
 Supervisor:
 
 ```elixir
-defmodule ExampleApp.Application do
+defmodule MyApp.Application do
   use Application
 
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
-      WalEx.Supervisor
+      {WalEx.Supervisor, Application.get_env(:my_app, WalEx)}
     ]
 
-    opts = [strategy: :one_for_one, name: ExampleApp.Supervisor]
+    opts = [strategy: :one_for_one, name: MyApp.Supervisor]
     Supervisor.start_link(children, opts)
   end
 end
@@ -151,10 +153,10 @@ end
 Example Module:
 
 ```elixir
-defmodule ExampleApp.UserAccountEvent do
-  import WalEx.{Event, TransactionFilter}
+defmodule MyApp.UserAccountEvent do
+  use WalEx.Event, name: MyApp
 
-  @behaviour WalEx.Event
+  import WalEx.TransactionFilter
 
   def process(txn) do
     cond do
