@@ -9,7 +9,7 @@ perform callback-like actions with the data. For example:
 - Stream database changes to an external data processing service
 - Send a user a welcome email after they create a new account
 - Augment an existing Postgres-backed application with business logic
-- Send events to third party services (analytics, CRM, Zapier/n8n)
+- Send events to third party services (analytics, CRM, Zapier, etc)
 - Update index / invalidate cache whenever a record is changed
 
 You can learn more about CDC and what you can do with it here: [Why capture changes?](https://bbhoss.io/posts/announcing-cainophile/#why-capture-changes)
@@ -69,7 +69,7 @@ Or just specific tables:
 CREATE PUBLICATION events FOR TABLE user_account, todo;
 ```
 
-Filter based on [row conditions](https://www.postgresql.fastware.com/blog/inside-logical-replication-in-postgresql#RowFilters):
+Filter based on [row conditions](https://www.postgresql.fastware.com/blog/introducing-publication-row-filters) (Postgres v15+ only):
 
 ```sql
 CREATE PUBLICATION user_account_event FOR TABLE user_account WHERE (active IS TRUE);
