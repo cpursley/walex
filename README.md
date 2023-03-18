@@ -63,10 +63,16 @@ All tables:
 CREATE PUBLICATION events FOR ALL TABLES;
 ```
 
-Or specific tables:
+Or just specific tables:
 
 ```sql
 CREATE PUBLICATION events FOR TABLE user_account, todo;
+```
+
+Filter based on [row conditions](https://www.postgresql.fastware.com/blog/inside-logical-replication-in-postgresql#RowFilters):
+
+```sql
+CREATE PUBLICATION user_account_event FOR TABLE user_account WHERE (active IS TRUE);
 ```
 
 ### Replica Identity
