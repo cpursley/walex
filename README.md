@@ -101,7 +101,7 @@ When creating a new Postgres database on RDS, you'll need to set a Parameter
 Group with the following settings:
 
 ```text
-rds.replication = 1
+rds.logical_replication = 1
 max_replication_slots = 5
 max_slot_wal_keep_size = 2048
 ```
