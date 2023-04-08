@@ -90,7 +90,7 @@ ALTER TABLE user_account REPLICA IDENTITY FULL;
 ALTER TABLE todo REPLICA IDENTITY FULL;
 ```
 
-Also, be mindful of [replication gotchas][(https://pgdash.io/blog/postgres-replication-gotchas.html).
+Also, be mindful of [replication gotchas](https://pgdash.io/blog/postgres-replication-gotchas.html).
 
 ### AWS RDS
 
