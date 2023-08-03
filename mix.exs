@@ -4,7 +4,7 @@ defmodule WalEx.MixProject do
   def project do
     [
       app: :walex,
-      version: "2.0.0",
+      version: "2.1.0",
       elixir: "~> 1.13",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -26,13 +26,13 @@ defmodule WalEx.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:postgrex, ">= 0.0.0"},
-      {:decimal, "~> 2.0"},
-      {:ex_doc, "~> 0.29.2", only: :dev, runtime: false},
-      {:jason, "~> 1.3"},
+      {:postgrex, "~> 0.17.2"},
+      {:decimal, "~> 2.1.1"},
+      {:ex_doc, "~> 0.30.4", only: :dev, runtime: false},
+      {:jason, "~> 1.4.1"},
       {:map_diff, "~> 1.3"},
-      {:retry, "~> 0.17.0"},
-      {:timex, "~> 3.7.9"}
+      {:retry, "~> 0.18.0"},
+      {:timex, "~> 3.7.11"}
     ]
   end
 
