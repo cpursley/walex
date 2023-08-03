@@ -32,7 +32,7 @@ defmodule WalEx.MixProject do
       {:jason, "~> 1.4.1"},
       {:map_diff, "~> 1.3"},
       {:retry, "~> 0.18.0"},
-      {:timex, "~> 3.7.11"}
+      {:timex, "~> 3.7"}
     ]
   end
 
