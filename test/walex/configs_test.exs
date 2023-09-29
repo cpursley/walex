@@ -31,9 +31,11 @@ defmodule WalEx.ConfigsTest do
                username: "username",
                password: "password",
                port: 5432,
-               database: "database"
+               database: "database",
+               ssl: false,
+               ssl_opts: [verify: :verify_none]
              ] ==
-               Configs.get_configs(:test_name, [:hostname, :username, :password, :database, :port])
+               Configs.get_configs(:test_name, [:hostname, :username, :password, :database, :port, :ssl, :ssl_opts])
     end
   end
 
@@ -53,13 +55,20 @@ defmodule WalEx.ConfigsTest do
                subscriptions: ["subscriptions"],
                publication: "publication",
                modules: ["modules"],
-               name: :test_name
+               name: :test_name,
+               ssl: false,
+               ssl_opts: [verify: :verify_none]
              ] == Configs.get_configs(:test_name)
     end
 
     test "should return only selected configs when second parameter is require a filter" do
-      assert [hostname: "hostname", modules: ["modules"]] ==
-               Configs.get_configs(:test_name, [:modules, :hostname])
+      assert [
+               hostname: "hostname",
+               modules: ["modules"],
+               ssl: false,
+               ssl_opts: [verify: :verify_none]
+             ] ==
+               Configs.get_configs(:test_name, [:modules, :hostname, :ssl, :ssl_opts])
     end
 
     test "should filter configs by process name" do
@@ -70,11 +79,21 @@ defmodule WalEx.ConfigsTest do
 
       {:ok, _pid} = Configs.start_link(configs: configs)
 
-      assert [database: "database", name: :test_name] ==
-               Configs.get_configs(:test_name, [:database, :name])
+      assert [
+               database: "database",
+               name: :test_name,
+               ssl: false,
+               ssl_opts: [verify: :verify_none]
+             ] ==
+               Configs.get_configs(:test_name, [:database, :name, :ssl, :ssl_opts])
 
-      assert [database: "other_database", name: :other_name] ==
-               Configs.get_configs(:other_name, [:database, :name])
+      assert [
+               database: "other_database",
+               name: :other_name,
+               ssl: false,
+               ssl_opts: [verify: :verify_none]
+             ] ==
+               Configs.get_configs(:other_name, [:database, :name, :ssl, :ssl_opts])
     end
   end
 
@@ -88,7 +107,9 @@ defmodule WalEx.ConfigsTest do
       port: 5432,
       subscriptions: ["subscriptions"],
       publication: "publication",
-      modules: ["modules"]
+      modules: ["modules"],
+      ssl: false,
+      ssl_opts: [verify: :verify_none]
     ]
 
     case keys do
