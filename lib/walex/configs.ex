@@ -35,7 +35,9 @@ defmodule WalEx.Configs do
       subscriptions: Keyword.get(configs, :subscriptions),
       publication: Keyword.get(configs, :publication),
       modules: Keyword.get(configs, :modules),
-      name: Keyword.get(configs, :name)
+      name: Keyword.get(configs, :name),
+      ssl: Keyword.get(configs, :ssl, false),
+      ssl_opts: Keyword.get(configs, :ssl_opts, [verify: :verify_none])
     ]
   end
 
