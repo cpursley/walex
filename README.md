@@ -202,7 +202,7 @@ where _name_ field was changed):
    # the new record
   record: %{
     id: 1234,
-    name: "Chase",
+    name: "Chase Pursley",
     ...
   },
   # changes provided by the map_diff library,
