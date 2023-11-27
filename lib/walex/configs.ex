@@ -1,6 +1,9 @@
 defmodule WalEx.Configs do
   use Agent
 
+  @allowed_config_value ~w(database hostname name password port publication username)a
+  @allowed_config_values ~w(modules subscriptions)a
+
   def start_link(opts) do
     configs =
       opts
@@ -20,6 +23,41 @@ defmodule WalEx.Configs do
     if Enum.empty?(keys), do: configs, else: Keyword.take(configs, keys)
   end
 
+  def add_config(app_name, key, new_values)
+      when is_list(new_values) and key in @allowed_config_values do
+    Agent.update(set_agent(app_name), fn config ->
+      updated_values =
+        config
+        |> Keyword.get(key, [])
+        |> Enum.concat(new_values)
+        |> Enum.uniq()
+
+      Keyword.put(config, key, updated_values)
+    end)
+  end
+
+  def add_config(app_name, key, new_value) when key in @allowed_config_values do
+    add_config(app_name, key, [new_value])
+  end
+
+  def remove_config(app_name, key, new_value) when key in @allowed_config_values do
+    Agent.update(set_agent(app_name), fn config ->
+      updated_values =
+        config
+        |> Keyword.get(key, [])
+        |> Enum.reject(&(&1 == new_value))
+        |> Enum.uniq()
+
+      Keyword.put(config, key, updated_values)
+    end)
+  end
+
+  def replace_config(app_name, key, new_value) when key in @allowed_config_value do
+    Agent.update(set_agent(app_name), fn config ->
+      Keyword.put(config, key, new_value)
+    end)
+  end
+
   defp build_app_configs(configs) do
     db_configs_from_url =
       configs
@@ -37,7 +75,7 @@ defmodule WalEx.Configs do
       modules: Keyword.get(configs, :modules),
       name: Keyword.get(configs, :name),
       ssl: Keyword.get(configs, :ssl, false),
-      ssl_opts: Keyword.get(configs, :ssl_opts, [verify: :verify_none])
+      ssl_opts: Keyword.get(configs, :ssl_opts, verify: :verify_none)
     ]
   end
 
@@ -77,4 +115,6 @@ defmodule WalEx.Configs do
   defp put_hostname_if_present(keyword, hostname) when is_binary(hostname) do
     Keyword.put(keyword, :hostname, hostname)
   end
+
+  defp set_agent(app_name), do: WalEx.Registry.set_name(:set_agent, __MODULE__, app_name)
 end

@@ -35,7 +35,15 @@ defmodule WalEx.ConfigsTest do
                ssl: false,
                ssl_opts: [verify: :verify_none]
              ] ==
-               Configs.get_configs(:test_name, [:hostname, :username, :password, :database, :port, :ssl, :ssl_opts])
+               Configs.get_configs(:test_name, [
+                 :hostname,
+                 :username,
+                 :password,
+                 :database,
+                 :port,
+                 :ssl,
+                 :ssl_opts
+               ])
     end
   end
 
@@ -94,6 +102,67 @@ defmodule WalEx.ConfigsTest do
                ssl_opts: [verify: :verify_none]
              ] ==
                Configs.get_configs(:other_name, [:database, :name, :ssl, :ssl_opts])
+    end
+  end
+
+  describe "add_config/3" do
+    setup do
+      {:ok, _pid} = Configs.start_link(configs: get_base_configs())
+      :ok
+    end
+
+    test "should add new values when new_values is a list" do
+      Configs.add_config(:test_name, :subscriptions, [
+        "new_subscriptions_1",
+        "new_subscriptions_2"
+      ])
+
+      assert ["subscriptions", "new_subscriptions_1", "new_subscriptions_2"] ==
+               Configs.get_configs(:test_name)[:subscriptions]
+    end
+
+    test "should add new values when new_value is not a list" do
+      Configs.add_config(:test_name, :subscriptions, "new_subscriptions")
+
+      assert ["subscriptions", "new_subscriptions"] ==
+               Configs.get_configs(:test_name)[:subscriptions]
+    end
+  end
+
+  describe "remove_config/3" do
+    setup do
+      {:ok, _pid} = Configs.start_link(configs: get_base_configs())
+      :ok
+    end
+
+    test "should remove existing value from list if it exists" do
+      Configs.add_config(:test_name, :subscriptions, [
+        "new_subscriptions_1",
+        "new_subscriptions_2"
+      ])
+
+      assert ["subscriptions", "new_subscriptions_1", "new_subscriptions_2"] ==
+               Configs.get_configs(:test_name)[:subscriptions]
+
+      Configs.remove_config(:test_name, :subscriptions, "subscriptions")
+
+      assert ["new_subscriptions_1", "new_subscriptions_2"] ==
+               Configs.get_configs(:test_name)[:subscriptions]
+    end
+  end
+
+  describe "replace_config/3" do
+    setup do
+      {:ok, _pid} = Configs.start_link(configs: get_base_configs())
+      :ok
+    end
+
+    test "should replace existing value when value is not a list" do
+      assert "password" == Configs.get_configs(:test_name)[:password]
+
+      Configs.replace_config(:test_name, :password, "new_password")
+
+      assert "new_password" == Configs.get_configs(:test_name)[:password]
     end
   end
 
