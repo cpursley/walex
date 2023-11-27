@@ -28,7 +28,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 2.3.0"}
+    {:walex, "~> 2.3.2"}
   ]
 end
 ```
@@ -138,6 +138,14 @@ config :my_app, WalEx,
   subscriptions: [:user_account, :todo],
   modules: [MyApp.UserAcountEvent, MyApp.TodoEvent],
   name: MyApp
+```
+
+You can also dynamically update the config at runtime:
+
+```elixir
+Configs.add_config(:test_name, :subscriptions, ["new_subscriptions_1", "new_subscriptions_2"])
+WalEx.Configs.remove_config(:test_name, :subscriptions, "subscriptions")
+WalEx.Configs.replace_config(:test_name, :password, "new_password")
 ```
 
 Supervisor:
