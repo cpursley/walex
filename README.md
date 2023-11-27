@@ -143,7 +143,7 @@ config :my_app, WalEx,
 You can also dynamically update the config at runtime:
 
 ```elixir
-Configs.add_config(:test_name, :subscriptions, ["new_subscriptions_1", "new_subscriptions_2"])
+WalEx.Configs.add_config(:test_name, :subscriptions, ["new_subscriptions_1", "new_subscriptions_2"])
 WalEx.Configs.remove_config(:test_name, :subscriptions, "subscriptions")
 WalEx.Configs.replace_config(:test_name, :password, "new_password")
 ```
