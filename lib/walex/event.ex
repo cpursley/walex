@@ -1,4 +1,5 @@
 defmodule WalEx.Event do
+  require Logger
   import WalEx.TransactionFilter
 
   alias WalEx.Changes
@@ -14,18 +15,75 @@ defmodule WalEx.Event do
   )
 
   @doc """
-  Behaviour for processing event
+  Macros for processing event
   """
-  @callback process(payload :: %Changes.Transaction{}) :: :ok | {:error, any()}
-
   defmacro __using__(opts) do
     app_name = Keyword.get(opts, :name)
 
     quote do
-      @behaviour Event
+      def event(table, txn), do: Event.event(table, txn, unquote(app_name))
+      def events(table, txn), do: Event.events(table, txn, unquote(app_name))
 
-      def event(table_name, txn), do: Event.event(table_name, txn, unquote(app_name))
-      def events(table_name, txn), do: Event.events(table_name, txn, unquote(app_name))
+      defmacro on_event(table, do_block) do
+        quote do
+          def process(txn) do
+            case event(unquote(table), txn) do
+              event = {:ok, %WalEx.Event{}} ->
+                Logger.info("on_event fired")
+                unquote(do_block).(event)
+
+              no_event ->
+                no_event
+            end
+          end
+        end
+      end
+
+      # TODO: Dry these up
+      defmacro on_insert(table, do_block) do
+        quote do
+          def process_insert(txn) do
+            case event(unquote(table), txn) do
+              filtered_event = {:ok, %WalEx.Event{type: :insert}} ->
+                Logger.info("on_insert fired")
+                unquote(do_block).(filtered_event)
+
+              no_event ->
+                no_event
+            end
+          end
+        end
+      end
+
+      defmacro on_update(table, do_block) do
+        quote do
+          def process_update(txn) do
+            case event(unquote(table), txn) do
+              filtered_event = {:ok, %WalEx.Event{type: :update}} ->
+                Logger.info("on_update fired")
+                unquote(do_block).(filtered_event)
+
+              no_event ->
+                no_event
+            end
+          end
+        end
+      end
+
+      defmacro on_delete(table, do_block) do
+        quote do
+          def process_delete(txn) do
+            case event(unquote(table), txn) do
+              filtered_event = {:ok, %WalEx.Event{type: :delete}} ->
+                Logger.info("on_delete fired")
+                unquote(do_block).(filtered_event)
+
+              no_event ->
+                no_event
+            end
+          end
+        end
+      end
     end
   end
 
@@ -83,9 +141,9 @@ defmodule WalEx.Event do
   @doc """
   When single event per table is expected
   """
-  def event(table_name, txn, app_name) do
-    with true <- has_tables?(table_name, txn, app_name),
-         [table] <- table(table_name, txn),
+  def event(table, txn, app_name) do
+    with true <- has_tables?(table, txn, app_name),
+         [table] <- table(table, txn),
          casted_event <- cast(table),
          true <- Map.has_key?(casted_event, :__struct__) do
       {:ok, casted_event}
@@ -101,9 +159,9 @@ defmodule WalEx.Event do
   @doc """
   When multiple events per table is expected (transaction)
   """
-  def events(table_name, txn, app_name) do
-    with true <- has_tables?(table_name, txn, app_name),
-         tables <- table(table_name, txn),
+  def events(table, txn, app_name) do
+    with true <- has_tables?(table, txn, app_name),
+         tables <- table(table, txn),
          casted_events <- Enum.map(tables, &cast(&1)) do
       {:ok, casted_events}
     else

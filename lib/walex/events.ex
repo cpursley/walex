@@ -23,11 +23,22 @@ defmodule WalEx.Events do
     {:reply, :ok, state}
   end
 
+  defp process_events(nil, %{changes: [], commit_timestamp: _}), do: nil
+
   defp process_events([modules: modules], txn) when is_list(modules) do
-    Enum.each(modules, fn module -> module.process(txn) end)
+    process_modules(modules, txn)
   end
 
-  defp process_events([modules: module], txn), do: module.process(txn)
+  defp process_modules(modules, txn) do
+    functions = ~w(process process_insert process_update process_delete)a
 
-  defp process_events(nil, %{changes: [], commit_timestamp: _}), do: nil
+    Enum.each(modules, fn module ->
+      Enum.each(functions, fn function ->
+        if Kernel.function_exported?(module, function, 1) do
+          result = apply(module, function, [txn])
+          result
+        end
+      end)
+    end)
+  end
 end

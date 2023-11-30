@@ -28,7 +28,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 2.3.2"}
+    {:walex, "~> 3.0.0"}
   ]
 end
 ```
@@ -66,13 +66,13 @@ CREATE PUBLICATION events FOR ALL TABLES;
 Or just specific tables:
 
 ```sql
-CREATE PUBLICATION events FOR TABLE user_account, todo;
+CREATE PUBLICATION events FOR TABLE user, todo;
 ```
 
 Filter based on [row conditions](https://www.postgresql.fastware.com/blog/introducing-publication-row-filters) (Postgres v15+ only):
 
 ```sql
-CREATE PUBLICATION user_account_event FOR TABLE user_account WHERE (active IS TRUE);
+CREATE PUBLICATION user_event FOR TABLE user WHERE (active IS TRUE);
 ```
 
 ### Replica Identity
@@ -86,7 +86,7 @@ each table.
 Specific tables:
 
 ```sql
-ALTER TABLE user_account REPLICA IDENTITY FULL;
+ALTER TABLE user REPLICA IDENTITY FULL;
 ALTER TABLE todo REPLICA IDENTITY FULL;
 ```
 
@@ -110,7 +110,7 @@ max_slot_wal_keep_size = 2048
 
 ## Usage
 
-Config:
+### Config
 
 ```elixir
 # config.exs
@@ -122,7 +122,7 @@ config :my_app, WalEx,
   port: "5432",
   database: "postgres",
   publication: "events",
-  subscriptions: [:user_account, :todo],
+  subscriptions: [:user, :todo],
   modules: [MyApp.UserAcountEvent, MyApp.TodoEvent],
   name: MyApp
 ```
@@ -135,7 +135,7 @@ It is also possible to just define the URL configuration for the database
 config :my_app, WalEx,
   url: "postgres://username:password@hostname:port/database"
   publication: "events",
-  subscriptions: [:user_account, :todo],
+  subscriptions: [:user, :todo],
   modules: [MyApp.UserAcountEvent, MyApp.TodoEvent],
   name: MyApp
 ```
@@ -148,7 +148,7 @@ WalEx.Configs.remove_config(:test_name, :subscriptions, "subscriptions")
 WalEx.Configs.replace_config(:test_name, :password, "new_password")
 ```
 
-Supervisor:
+### Supervisor
 
 ```elixir
 defmodule MyApp.Application do
@@ -166,29 +166,56 @@ defmodule MyApp.Application do
 end
 ```
 
-Example Module:
+### Examples
+
+DSL:
 
 ```elixir
-defmodule MyApp.UserAccountEvent do
+defmodule MyApp.UserEvent do
+  use WalEx.Event, name: MyApp
+
+  # any event
+  on_event(:user, fn {:ok, user} ->
+    IO.inspect(on_event: user)
+    # do something with user data (Event Struct)
+  end)
+
+  on_insert(:user, fn {:ok, user} ->
+    IO.inspect(on_insert: user)
+  end)
+
+  on_update(:user, fn {:ok, user} ->
+    IO.inspect(on_update: user)
+  end)
+
+  on_delete(:user, fn {:ok, user} ->
+    IO.inspect(on_delete: user)
+  end)
+```
+
+Or you can write a _process_ function:
+
+```elixir
+defmodule MyApp.UserEvent do
   use WalEx.Event, name: MyApp
 
   import WalEx.TransactionFilter
 
   def process(txn) do
     cond do
-      insert_event?(:user_account, txn) ->
-        {:ok, user_account} = event(:user_account, txn)
-        IO.inspect(user_account_insert_event: user_account)
-        # do something with user_account data
+      insert_event?(:user, txn) ->
+        {:ok, user} = event(:user, txn)
+        IO.inspect(user_insert_event: user)
+        # do something with user data
 
-      update_event?(:user_account, txn) ->
-        {:ok, user_account} = event(:user_account, txn)
-        IO.inspect(user_account_update_event: user_account)
+      update_event?(:user, txn) ->
+        {:ok, user} = event(:user, txn)
+        IO.inspect(user_update_event: user)
 
       # you can also specify the relation
-      delete_event?("public.user_account", txn) ->
-        {:ok, user_account} = event(:user_account, txn)
-        IO.inspect(user_account_delete_event: user_account)
+      delete_event?("public.user", txn) ->
+        {:ok, user} = event(:user, txn)
+        IO.inspect(user_delete_event: user)
 
       true ->
         nil
@@ -200,7 +227,9 @@ end
 Additional filter helpers available in the
 [WalEx.TransactionFilter](lib/walex/transaction_filter.ex) module.
 
-The **process** _behaviour_ returns an `Event` Struct with changes provided by the
+### Event
+
+The returned data is an [%Event{}](lib/walex/event.ex) Struct with changes provided by the
 [map_diff](https://github.com/Qqwy/elixir-map_diff) library (UPDATE example
 where _name_ field was changed):
 
@@ -221,7 +250,7 @@ where _name_ field was changed):
       removed: "Chase"
     }
   },
-  commit_timestamp: ~U[2021-12-06 14:32:49Z]
+  commit_timestamp: ~U[2023-12-06 14:32:49Z]
 }
 ```
 
