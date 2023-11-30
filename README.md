@@ -242,6 +242,11 @@ where _name_ field was changed):
     name: "Chase Pursley",
     ...
   },
+  old_record: %{
+    id: 1234,
+    name: "Chase",
+    ...
+  },
   # changes provided by the map_diff library,
   changes: %{
     name: %{
