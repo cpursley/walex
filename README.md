@@ -28,7 +28,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 3.0.0"}
+    {:walex, "~> 3.0.2"}
   ]
 end
 ```
@@ -123,7 +123,10 @@ config :my_app, WalEx,
   database: "postgres",
   publication: "events",
   subscriptions: [:user, :todo],
-  modules: [MyApp.UserAcountEvent, MyApp.TodoEvent],
+  # modules are optional; WalEx assumes your module names match
+  # this pattern: MyApp.Events.User, MyApp.Events.ToDo, etc
+  # but you can also specify custom modules like so:
+  modules: [MyApp.CustomModule, MyApp.OtherCustomModule],
   name: MyApp
 ```
 
@@ -136,16 +139,15 @@ config :my_app, WalEx,
   url: "postgres://username:password@hostname:port/database"
   publication: "events",
   subscriptions: [:user, :todo],
-  modules: [MyApp.UserAcountEvent, MyApp.TodoEvent],
   name: MyApp
 ```
 
 You can also dynamically update the config at runtime:
 
 ```elixir
-WalEx.Configs.add_config(:test_name, :subscriptions, ["new_subscriptions_1", "new_subscriptions_2"])
-WalEx.Configs.remove_config(:test_name, :subscriptions, "subscriptions")
-WalEx.Configs.replace_config(:test_name, :password, "new_password")
+WalEx.Configs.add_config(MyApp, :subscriptions, ["new_subscriptions_1", "new_subscriptions_2"])
+WalEx.Configs.remove_config(MyApp, :subscriptions, "subscriptions")
+WalEx.Configs.replace_config(MyApp, :password, "new_password")
 ```
 
 ### Supervisor
@@ -155,7 +157,6 @@ defmodule MyApp.Application do
   use Application
 
   def start(_type, _args) do
-    # List all child processes to be supervised
     children = [
       {WalEx.Supervisor, Application.get_env(:my_app, WalEx)}
     ]
@@ -168,10 +169,12 @@ end
 
 ### Examples
 
+If your app is named _MyApp_ and you have a subscription called _:user_ (which represents a database table), WalEx assumes you have a module called `MyApp.Events.User` that uses WalEx Event. But you can also define any custom module, just be sure to add it to the _modules_ config.
+
 DSL:
 
 ```elixir
-defmodule MyApp.UserEvent do
+defmodule MyApp.Events.User do
   use WalEx.Event, name: MyApp
 
   # any event
@@ -196,7 +199,7 @@ defmodule MyApp.UserEvent do
 Or you can write a _process_ function:
 
 ```elixir
-defmodule MyApp.UserEvent do
+defmodule MyApp.Events.User do
   use WalEx.Event, name: MyApp
 
   import WalEx.TransactionFilter

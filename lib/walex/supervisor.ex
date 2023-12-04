@@ -13,15 +13,21 @@ defmodule WalEx.Supervisor do
   end
 
   def start_link(opts) do
-    validate_opts(opts)
-
     app_name = Keyword.get(opts, :name)
+    modules = Keyword.get(opts, :modules, [])
+    subscriptions = Keyword.get(opts, :subscriptions)
+
+    supervisor_opts =
+      opts
+      |> Keyword.put(:modules, WalExConfigs.build_module_names(app_name, modules, subscriptions))
+
+    validate_opts(supervisor_opts)
 
     {:ok, _pid} = WalEx.Registry.start_registry()
 
     name = WalEx.Registry.set_name(:set_supervisor, __MODULE__, app_name)
 
-    Supervisor.start_link(__MODULE__, configs: opts, name: name)
+    Supervisor.start_link(__MODULE__, configs: supervisor_opts, name: name)
   end
 
   @impl true

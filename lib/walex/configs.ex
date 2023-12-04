@@ -64,19 +64,45 @@ defmodule WalEx.Configs do
       |> Keyword.get(:url, "")
       |> parse_url()
 
+    name = Keyword.get(configs, :name)
+    subscriptions = Keyword.get(configs, :subscriptions)
+    modules = Keyword.get(configs, :modules, [])
+
     [
+      name: name,
+      publication: Keyword.get(configs, :publication),
+      subscriptions: subscriptions,
+      modules: build_module_names(name, modules, subscriptions),
       hostname: Keyword.get(configs, :hostname, db_configs_from_url[:hostname]),
       username: Keyword.get(configs, :username, db_configs_from_url[:username]),
       password: Keyword.get(configs, :password, db_configs_from_url[:password]),
       port: Keyword.get(configs, :port, db_configs_from_url[:port]),
       database: Keyword.get(configs, :database, db_configs_from_url[:database]),
-      subscriptions: Keyword.get(configs, :subscriptions),
-      publication: Keyword.get(configs, :publication),
-      modules: Keyword.get(configs, :modules),
-      name: Keyword.get(configs, :name),
       ssl: Keyword.get(configs, :ssl, false),
       ssl_opts: Keyword.get(configs, :ssl_opts, verify: :verify_none)
     ]
+  end
+
+  def build_module_names(name, modules, subscriptions) do
+    subscriptions
+    |> map_subscriptions_to_modules(name)
+    |> Enum.concat(modules)
+    |> Enum.uniq()
+    |> Enum.sort()
+  end
+
+  def map_subscriptions_to_modules(subscriptions, name) do
+    Enum.map(subscriptions, fn subscription ->
+      (to_string(name) <> "." <> "Events" <> "." <> to_module_name(subscription))
+      |> String.to_atom()
+    end)
+  end
+
+  def to_module_name(subscription) when is_atom(subscription) or is_binary(subscription) do
+    subscription
+    |> to_string()
+    |> String.split("_")
+    |> Enum.map_join(&String.capitalize/1)
   end
 
   defp parse_url(""), do: []
