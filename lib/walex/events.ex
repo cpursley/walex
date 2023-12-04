@@ -33,12 +33,13 @@ defmodule WalEx.Events do
     functions = ~w(process process_insert process_update process_delete)a
 
     Enum.each(modules, fn module ->
-      Enum.each(functions, fn function ->
-        if Kernel.function_exported?(module, function, 1) do
-          result = apply(module, function, [txn])
-          result
-        end
-      end)
+      Enum.each(functions, fn function -> apply_process_macro(module, function, txn) end)
     end)
+  end
+
+  defp apply_process_macro(module, function, txn) do
+    if Keyword.has_key?(module.__info__(:functions), function) do
+      apply(module, function, [txn])
+    end
   end
 end
