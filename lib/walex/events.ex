@@ -30,7 +30,7 @@ defmodule WalEx.Events do
   end
 
   defp process_modules(modules, txn) do
-    functions = ~w(process process_insert process_update process_delete)a
+    functions = ~w(process_all process_insert process_update process_delete)a
 
     Enum.each(modules, &process_module(&1, functions, txn))
   end

@@ -26,7 +26,7 @@ defmodule WalEx.Event do
 
       defmacro on_event(table, do_block) do
         quote do
-          def process(txn) do
+          def process_all(txn) do
             case events(txn, unquote(table)) do
               events when is_list(events) and events != [] ->
                 unquote(do_block).(events)
@@ -38,11 +38,10 @@ defmodule WalEx.Event do
         end
       end
 
-      # TODO: Dry these up
-      defmacro on_insert(table, do_block) do
+      defp process_event(type, table, do_block) do
         quote do
-          def process_insert(txn) do
-            case events(txn, unquote(table), :insert) do
+          def unquote(:"process_#{type}")(txn) do
+            case events(txn, unquote(table), unquote(type)) do
               events when is_list(events) and events != [] ->
                 unquote(do_block).(events)
 
@@ -53,33 +52,9 @@ defmodule WalEx.Event do
         end
       end
 
-      defmacro on_update(table, do_block) do
-        quote do
-          def process_update(txn) do
-            case events(txn, unquote(table), :update) do
-              events when is_list(events) and events != [] ->
-                unquote(do_block).(events)
-
-              _ ->
-                {:error, :no_events}
-            end
-          end
-        end
-      end
-
-      defmacro on_delete(table, do_block) do
-        quote do
-          def process_delete(txn) do
-            case events(txn, unquote(table), :delete) do
-              events when is_list(events) and events != [] ->
-                unquote(do_block).(events)
-
-              _ ->
-                {:error, :no_events}
-            end
-          end
-        end
-      end
+      defmacro on_insert(table, do_block), do: process_event(:insert, table, do_block)
+      defmacro on_update(table, do_block), do: process_event(:update, table, do_block)
+      defmacro on_delete(table, do_block), do: process_event(:delete, table, do_block)
     end
   end
 
