@@ -29,11 +29,9 @@ defmodule WalEx.Event do
           def process(txn) do
             case events(txn, unquote(table)) do
               events when is_list(events) and events != [] ->
-                Logger.info("on_event fired")
                 unquote(do_block).(events)
 
               _ ->
-                Logger.info("on_event fired but no events!")
                 {:error, :no_events}
             end
           end
@@ -44,11 +42,8 @@ defmodule WalEx.Event do
       defmacro on_insert(table, do_block) do
         quote do
           def process_insert(txn) do
-            Logger.info("process_insert called")
-
             case events(txn, unquote(table), :insert) do
               events when is_list(events) and events != [] ->
-                Logger.info("on_insert fired")
                 unquote(do_block).(events)
 
               _ ->
@@ -61,15 +56,11 @@ defmodule WalEx.Event do
       defmacro on_update(table, do_block) do
         quote do
           def process_update(txn) do
-            Logger.info("process_update called")
-
             case events(txn, unquote(table), :update) do
               events when is_list(events) and events != [] ->
-                Logger.info("on_update fired")
                 unquote(do_block).(events)
 
               _ ->
-                Logger.info("on_update fired but no events!")
                 {:error, :no_events}
             end
           end
@@ -79,15 +70,11 @@ defmodule WalEx.Event do
       defmacro on_delete(table, do_block) do
         quote do
           def process_delete(txn) do
-            Logger.info("process_delete called")
-
             case events(txn, unquote(table), :delete) do
               events when is_list(events) and events != [] ->
-                Logger.info("on_delete fired")
                 unquote(do_block).(events)
 
               _ ->
-                Logger.info("on_delete fired but no events!")
                 {:error, :no_events}
             end
           end
