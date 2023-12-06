@@ -2,7 +2,12 @@
 # which in turn draws on https://github.com/cainophile/cainophile
 
 defmodule WalEx.TransactionFilter do
-  alias WalEx.Changes.Transaction
+  alias WalEx.Changes.{
+    DeletedRecord,
+    NewRecord,
+    UpdatedRecord,
+    Transaction
+  }
 
   require Logger
 
@@ -48,8 +53,7 @@ defmodule WalEx.TransactionFilter do
       {:ok, filter} ->
         Enum.any?(changes, fn change -> change_matches(event, filter, change) end)
 
-      {:error, msg} ->
-        Logger.warn("Could not parse relation filter: #{inspect(msg)}")
+      {:error, _msg} ->
         false
     end
   end
@@ -62,7 +66,7 @@ defmodule WalEx.TransactionFilter do
   end
 
   defp change_matches(_event, filter, change) do
-    name_matches(filter.schema, change.schema) and name_matches(filter.table, change.table)
+    name_matches?(filter.schema, change.schema) and name_matches?(filter.table, change.table)
   end
 
   @doc """
@@ -97,11 +101,8 @@ defmodule WalEx.TransactionFilter do
     end
   end
 
-  defp name_matches(nil, _change_name), do: true
-
-  defp name_matches(filter_name, change_name) do
-    filter_name == change_name
-  end
+  defp name_matches?(nil, _change_name), do: true
+  defp name_matches?(filter_name, change_name), do: filter_name == change_name
 
   def insert_event?(relation, txn), do: relation("INSERT", relation, txn)
   def update_event?(relation, txn), do: relation("UPDATE", relation, txn)
@@ -119,53 +120,59 @@ defmodule WalEx.TransactionFilter do
     end
   end
 
-  def table(table_name, %Transaction{changes: changes}) do
-    Enum.filter(changes, fn change -> has_table?(change, table_name) end)
+  @doc """
+  Returns a list of changes for the given table name and type (optional)
+  """
+  def filter_changes(%Transaction{changes: changes}, table, type, app_name) do
+    changes
+    |> subscribes_and_has_table(table, app_name)
+    |> Enum.filter(&is_type?(&1, type))
   end
 
-  def table(_table, _txn), do: false
-
-  defp has_table?(change, table_name), do: String.to_atom(change.table) == table_name
-
-  def has_tables?(tables, %Transaction{changes: _changes} = txn, app_name) when is_list(tables) do
-    tables
-    |> Enum.map(fn table -> has_tables?(table, txn, app_name) end)
-    |> Enum.all?()
+  def filter_changes(%Transaction{changes: changes}, table, app_name) do
+    subscribes_and_has_table(changes, table, app_name)
   end
 
-  def has_tables?(table_name, %Transaction{changes: changes}, app_name)
-      when is_atom(table_name) do
-    Enum.any?(changes, fn change ->
-      has_table?(change, table_name) && subscribes?(change, app_name)
-    end)
+  defp subscribes_and_has_table(changes, table, app_name) do
+    Enum.filter(changes, &subscribes_to_table?(&1, table, app_name))
   end
 
-  def has_tables?(table_name, txn, app_name) when is_binary(table_name) do
-    has_tables?(String.to_atom(table_name), txn, app_name)
+  def subscribes_to_table?(change, table, app_name) do
+    has_table?(change, table) && subscribes?(change, app_name)
   end
 
-  def has_tables?(_tables, _txn, _app_name), do: false
-
-  defp subscribes?(change, app_name) do
+  def subscribes?(%{table: table}, app_name) do
     subscriptions =
       app_name
       |> WalEx.Configs.get_configs([:subscriptions])
       |> Keyword.get(:subscriptions)
 
-    String.to_atom(change.table) in subscriptions
+    String.to_atom(table) in subscriptions
   end
 
-  def changes(old_record, record) do
-    case MapDiff.diff(old_record, record) do
+  def has_table?(%{table: table}, table_name) when is_atom(table), do: table == table_name
+
+  def has_table?(%{table: table}, table_name) when is_binary(table),
+    do: String.to_atom(table) == table_name
+
+  def has_table?(_txn, _table_name), do: false
+
+  def is_type?(%NewRecord{type: "INSERT"}, :insert), do: true
+  def is_type?(%UpdatedRecord{type: "UPDATE"}, :update), do: true
+  def is_type?(%DeletedRecord{type: "DELETE"}, :delete), do: true
+  def is_type?(_txn, _type), do: false
+
+  def changes(old_record, new_record) do
+    case MapDiff.diff(old_record, new_record) do
       %{value: changes} ->
-        filter_changes(changes)
+        filter_diffs(changes)
 
       _ ->
         %{}
     end
   end
 
-  defp filter_changes(changes) do
+  defp filter_diffs(changes) do
     changes
     |> Enum.filter(fn {_key, change} ->
       if is_map(change) && Map.has_key?(change, :changed) do

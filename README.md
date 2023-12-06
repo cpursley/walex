@@ -9,7 +9,7 @@ perform callback-like actions with the data. For example:
 - Stream database changes to an external data processing service
 - Send a user a welcome email after they create a new account
 - Augment an existing Postgres-backed application with business logic
-- Send events to third party services (analytics, CRM, Zapier, etc)
+- Send events to third party services (analytics, CRM, webhooks, etc)
 - Update index / invalidate cache whenever a record is changed
 
 You can learn more about CDC and what you can do with it here: [Why capture changes?](https://bbhoss.io/posts/announcing-cainophile/#why-capture-changes)
@@ -171,6 +171,8 @@ end
 
 If your app is named _MyApp_ and you have a subscription called _:user_ (which represents a database table), WalEx assumes you have a module called `MyApp.Events.User` that uses WalEx Event. But you can also define any custom module, just be sure to add it to the _modules_ config.
 
+Note that the result of the :ok tuple is a list. This is because WalEx returns a _List_ of changes form a database _transaction_ for a particular table. Often times this will just contain one result, but it could be many (for example, if you use database triggers to update a column after an insert).
+
 DSL:
 
 ```elixir
@@ -178,53 +180,22 @@ defmodule MyApp.Events.User do
   use WalEx.Event, name: MyApp
 
   # any event
-  on_event(:user, fn {:ok, user} ->
-    IO.inspect(on_event: user)
-    # do something with user data (Event Struct)
+  on_event(:user, fn {:ok, users} ->
+    IO.inspect(on_event: users)
+    # do something with users data (Event Struct)
   end)
 
-  on_insert(:user, fn {:ok, user} ->
-    IO.inspect(on_insert: user)
+  on_insert(:user, fn {:ok, users} ->
+    IO.inspect(on_insert: users)
   end)
 
-  on_update(:user, fn {:ok, user} ->
-    IO.inspect(on_update: user)
+  on_update(:user, fn {:ok, users} ->
+    IO.inspect(on_update: users)
   end)
 
-  on_delete(:user, fn {:ok, user} ->
-    IO.inspect(on_delete: user)
+  on_delete(:user, fn {:ok, users} ->
+    IO.inspect(on_delete: users)
   end)
-```
-
-Or you can write a _process_ function:
-
-```elixir
-defmodule MyApp.Events.User do
-  use WalEx.Event, name: MyApp
-
-  import WalEx.TransactionFilter
-
-  def process(txn) do
-    cond do
-      insert_event?(:user, txn) ->
-        {:ok, user} = event(:user, txn)
-        IO.inspect(user_insert_event: user)
-        # do something with user data
-
-      update_event?(:user, txn) ->
-        {:ok, user} = event(:user, txn)
-        IO.inspect(user_update_event: user)
-
-      # you can also specify the relation
-      delete_event?("public.user", txn) ->
-        {:ok, user} = event(:user, txn)
-        IO.inspect(user_delete_event: user)
-
-      true ->
-        nil
-    end
-  end
-end
 ```
 
 Additional filter helpers available in the
@@ -232,34 +203,36 @@ Additional filter helpers available in the
 
 ### Event
 
-The returned data is an [%Event{}](lib/walex/event.ex) Struct with changes provided by the
+The returned data is a List of [%Event{}](lib/walex/event.ex) Structs with changes provided by the
 [map_diff](https://github.com/Qqwy/elixir-map_diff) library (UPDATE example
 where _name_ field was changed):
 
 ```elixir
-%Event{
-  type: :update,
-   # the new record
-  record: %{
-    id: 1234,
-    name: "Chase Pursley",
-    ...
-  },
-  old_record: %{
-    id: 1234,
-    name: "Chase",
-    ...
-  },
-  # changes provided by the map_diff library,
-  changes: %{
-    name: %{
-      added: "Chase Pursley",
-      changed: :primitive_change,
-      removed: "Chase"
-    }
-  },
-  commit_timestamp: ~U[2023-12-06 14:32:49Z]
-}
+[
+  %Event{
+    type: :update,
+    # the new record
+    record: %{
+      id: 1234,
+      name: "Chase Pursley",
+      ...
+    },
+    old_record: %{
+      id: 1234,
+      name: "Chase",
+      ...
+    },
+    # changes provided by the map_diff library,
+    changes: %{
+      name: %{
+        added: "Chase Pursley",
+        changed: :primitive_change,
+        removed: "Chase"
+      }
+    },
+    commit_timestamp: ~U[2023-12-06 14:32:49Z]
+  }
+]
 ```
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
