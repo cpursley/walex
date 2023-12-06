@@ -40,7 +40,7 @@ defmodule WalEx.Events do
       {:module, module} ->
         Enum.each(functions, &apply_process_macro(&1, module, txn))
 
-      {:error, :nofile} ->
+      {:error, _error} ->
         :ok
     end
   end

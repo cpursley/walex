@@ -4,7 +4,7 @@ defmodule WalEx.MixProject do
   def project do
     [
       app: :walex,
-      version: "3.0.4",
+      version: "3.0.5",
       elixir: "~> 1.15",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
