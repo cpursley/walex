@@ -181,4 +181,17 @@ defmodule WalEx.TransactionFilter do
     end)
     |> Enum.into(%{})
   end
+
+  def filter_unwatched_changes(events, unwatched_changes) do
+    Enum.filter(events, &filter_unwatched_fields(&1, unwatched_changes))
+  end
+
+  # TODO: Maybe depreciate and allow filter to be passed as an argument
+  def filter_unwatched_fields(%{changes: changes}, unwatched_changes) do
+    changes
+    |> Enum.filter(fn {key, _value} -> key not in unwatched_changes end)
+    |> Kernel.!=([])
+  end
+
+  def filter_unwatched_fields(_event, _unwatched_changes), do: true
 end
