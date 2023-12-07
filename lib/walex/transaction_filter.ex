@@ -123,14 +123,25 @@ defmodule WalEx.TransactionFilter do
   @doc """
   Returns a list of changes for the given table name and type (optional)
   """
+
+  # def filter_changes(%Transaction{changes: changes}, table, type, app_name) do
+  #   changes
+  #   |> subscribes_and_has_table(table, app_name)
+  #   |> Enum.filter(&is_type?(&1, type))
+  # end
+
+  # def filter_changes(%Transaction{changes: changes}, table, app_name) do
+  #   subscribes_and_has_table(changes, table, app_name)
+  # end
+
+  def filter_changes(%Transaction{changes: changes}, table, nil, app_name) do
+    subscribes_and_has_table(changes, table, app_name)
+  end
+
   def filter_changes(%Transaction{changes: changes}, table, type, app_name) do
     changes
     |> subscribes_and_has_table(table, app_name)
     |> Enum.filter(&is_type?(&1, type))
-  end
-
-  def filter_changes(%Transaction{changes: changes}, table, app_name) do
-    subscribes_and_has_table(changes, table, app_name)
   end
 
   defp subscribes_and_has_table(changes, table, app_name) do
@@ -182,16 +193,37 @@ defmodule WalEx.TransactionFilter do
     |> Enum.into(%{})
   end
 
-  def filter_unwatched_changes(events, unwatched_changes) do
-    Enum.filter(events, &filter_unwatched_fields(&1, unwatched_changes))
+  def filter_unwatched_fields(events, unwatched_changes) do
+    Enum.filter(events, &unwatched_fields?(&1, unwatched_changes))
   end
 
-  # TODO: Maybe depreciate and allow filter to be passed as an argument
-  def filter_unwatched_fields(%{changes: changes}, unwatched_changes) do
+  def unwatched_fields?(%{changes: nil}, _unwatched_changes), do: true
+
+  def unwatched_fields?(%{changes: changes}, unwatched_changes) do
     changes
     |> Enum.filter(fn {key, _value} -> key not in unwatched_changes end)
     |> Kernel.!=([])
   end
 
-  def filter_unwatched_fields(_event, _unwatched_changes), do: true
+  def unwatched_fields?(_event, _unwatched_changes), do: true
+
+  def filter_unwatched_records(events, unwatched_records) do
+    Enum.filter(events, &watched_record?(&1, unwatched_records))
+  end
+
+  def watched_record?(%{new_record: nil, old_record: old_record = %{}}, unwatched_records) do
+    not contains_unwatched_records?(old_record, unwatched_records)
+  end
+
+  def watched_record?(%{new_record: new_record = %{}}, unwatched_records) do
+    not contains_unwatched_records?(new_record, unwatched_records)
+  end
+
+  def watched_record?(_event, _unwatched_records), do: false
+
+  def contains_unwatched_records?(record = %{}, unwatched_records = %{}) do
+    Enum.all?(unwatched_records, fn {key, value} ->
+      Map.has_key?(record, key) and Map.get(record, key) == value
+    end)
+  end
 end

@@ -28,7 +28,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 3.0.5"}
+    {:walex, "~> 3.0.6"}
   ]
 end
 ```
@@ -171,9 +171,9 @@ end
 
 If your app is named _MyApp_ and you have a subscription called _:user_ (which represents a database table), WalEx assumes you have a module called `MyApp.Events.User` that uses WalEx Event. But you can also define any custom module, just be sure to add it to the _modules_ config.
 
-Note that the result of the :ok tuple is a list. This is because WalEx returns a _List_ of changes form a database _transaction_ for a particular table. Often times this will just contain one result, but it could be many (for example, if you use database triggers to update a column after an insert).
+Note that the result of the `{:ok, events}` tuple is a list. This is because WalEx returns a _List_ of  _transactions_ for a particular table when there's a change event. Often times this will just contain one result, but it could be many (for example, if you use database triggers to update a column after an insert).
 
-DSL:
+#### DSL
 
 ```elixir
 defmodule MyApp.Events.User do
@@ -182,7 +182,7 @@ defmodule MyApp.Events.User do
   # any event
   on_event(:user, fn {:ok, users} ->
     IO.inspect(on_event: users)
-    # do something with users data (Event Struct)
+    # do something with users data
   end)
 
   on_insert(:user, fn {:ok, users} ->
@@ -196,6 +196,28 @@ defmodule MyApp.Events.User do
   on_delete(:user, fn {:ok, users} ->
     IO.inspect(on_delete: users)
   end)
+```
+
+#### Filters
+
+A common scenario is where you want to _"unsubscribe"_ from specific records (for example, temporarily for a migration or data fix). One way to accomplish this is to have a column with a value like `event_subscribe: false`. Then you can ignore specific events by specifying their key and value to *unwatched_records*.
+
+Another scenario is you might not care when just certain fields change. For example, maybe a database trigger sets updated_at _after_ a record is updated. Or a count changes, or several do that you don't need to react to. In this case, you can ignore the event change by adding them to *unwatched_fields*.
+
+```elixir
+defmodule MyApp.Events.User do
+  use WalEx.Event, name: MyApp
+
+  @filters %{
+    unwatched_records: %{event_subscribe: false},
+    unwatched_fields: ~w(event_id updated_at todos_count)a
+  }
+
+  on_insert(:user, @filters, fn {:ok, users} ->
+    IO.inspect(on_insert: users)
+    # resulting users data is filtered
+  end)
+end
 ```
 
 Additional filter helpers available in the
