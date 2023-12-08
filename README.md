@@ -28,7 +28,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 3.0.6"}
+    {:walex, "~> 3.1.0"}
   ]
 end
 ```
@@ -217,6 +217,32 @@ defmodule MyApp.Events.User do
     IO.inspect(on_insert: users)
     # resulting users data is filtered
   end)
+end
+```
+
+#### Functions
+
+You can also provide a list of functions (as atoms) to be applied to each Event (after optional filters are applied). Each function is run as an async Task on each event. The functions must be defined in the current module and take a single _event_ argument. Use with caution!
+
+```elixir
+defmodule MyApp.Events.User do
+  use WalEx.Event, name: MyApp
+
+  @filters %{unwatched_records: %{event_subscribe: false}}
+  @functions ~w(send_welcome_email add_to_crm)a
+
+  on_insert(:user, @filters, @functions, fn {:ok, users} ->
+    IO.inspect(on_insert: users)
+    # resulting users data is first filtered then functions are applied
+  end)
+
+  def send_welcome_email(user) do
+    # logic for sending welcome email to new user
+  end
+
+  def add_to_crm do
+  # logic for adding user to crm system
+  end
 end
 ```
 

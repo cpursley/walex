@@ -21,18 +21,45 @@ defmodule WalEx.Event do
     app_name = Keyword.get(opts, :name)
 
     quote do
-      def events(txn, table, type, filters) do
+      def filter_events(txn, table, type, filters) do
         Event.filter_and_cast(unquote(app_name), txn, table, type, filters)
       end
 
-      defmacro on_event(table, filters \\ %{}, do_block) do
+      defmacro process_events_async(events, functions) do
+        module = hd(__CALLER__.context_modules)
+
+        quote do
+          Enum.each(unquote(events), fn event ->
+            unquote(functions)
+            |> Enum.each(fn function ->
+              task_fn =
+                case function do
+                  # If function is a tuple, treat it as {Module, function}
+                  {mod, func} when is_atom(mod) and is_atom(func) ->
+                    fn -> apply(mod, func, [event]) end
+
+                  # If function is an atom, treat it as a local function in the current module
+                  # maybe don't allow atoms
+                  func when is_atom(func) ->
+                    fn -> apply(unquote(module), func, [event]) end
+
+                  _ ->
+                    raise ArgumentError, "Invalid function: #{inspect(function)}"
+                end
+
+              Task.start(task_fn)
+            end)
+          end)
+        end
+      end
+
+      defmacro on_event(table, filters \\ %{}, functions \\ [], do_block) do
         quote do
           def process_all(txn) do
-            case events(txn, unquote(table), unquote(nil), unquote(filters)) do
-              events when is_list(events) and events != [] ->
-                unquote(do_block).(events)
-
-                {:ok, events}
+            case filter_events(txn, unquote(table), unquote(nil), unquote(filters)) do
+              filtered_events when is_list(filtered_events) and filtered_events != [] ->
+                process_events_async(filtered_events, unquote(functions))
+                unquote(do_block).(filtered_events)
 
               _ ->
                 {:error, :no_events}
@@ -41,12 +68,13 @@ defmodule WalEx.Event do
         end
       end
 
-      defp process_event(table, type, filters, do_block) do
+      defp process_event(table, type, filters, functions, do_block) do
         quote do
           def unquote(:"process_#{type}")(txn) do
-            case events(txn, unquote(table), unquote(type), unquote(filters)) do
-              events when is_list(events) and events != [] ->
-                unquote(do_block).(events)
+            case filter_events(txn, unquote(table), unquote(type), unquote(filters)) do
+              filtered_events when is_list(filtered_events) and filtered_events != [] ->
+                process_events_async(filtered_events, unquote(functions))
+                unquote(do_block).(filtered_events)
 
               _ ->
                 {:error, :no_events}
@@ -55,16 +83,16 @@ defmodule WalEx.Event do
         end
       end
 
-      defmacro on_insert(table, filters \\ %{}, do_block) do
-        process_event(table, :insert, filters, do_block)
+      defmacro on_insert(table, filters \\ %{}, functions \\ [], do_block) do
+        process_event(table, :insert, filters, functions, do_block)
       end
 
-      defmacro on_update(table, filters \\ %{}, do_block) do
-        process_event(table, :update, filters, do_block)
+      defmacro on_update(table, filters \\ %{}, functions \\ [], do_block) do
+        process_event(table, :update, filters, functions, do_block)
       end
 
-      defmacro on_delete(table, filters \\ %{}, do_block) do
-        process_event(table, :delete, filters, do_block)
+      defmacro on_delete(table, filters \\ %{}, functions \\ [], do_block) do
+        process_event(table, :delete, filters, functions, do_block)
       end
     end
   end
