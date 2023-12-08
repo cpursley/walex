@@ -171,7 +171,7 @@ end
 
 If your app is named _MyApp_ and you have a subscription called _:user_ (which represents a database table), WalEx assumes you have a module called `MyApp.Events.User` that uses WalEx Event. But you can also define any custom module, just be sure to add it to the _modules_ config.
 
-Note that the result of the `{:ok, events}` tuple is a list. This is because WalEx returns a _List_ of  _transactions_ for a particular table when there's a change event. Often times this will just contain one result, but it could be many (for example, if you use database triggers to update a column after an insert).
+Note that the result of `events` is a list. This is because WalEx returns a _List_ of  _transactions_ for a particular table when there's a change event. Often times this will just contain one result, but it could be many (for example, if you use database triggers to update a column after an insert).
 
 #### DSL
 
@@ -180,20 +180,20 @@ defmodule MyApp.Events.User do
   use WalEx.Event, name: MyApp
 
   # any event
-  on_event(:user, fn {:ok, users} ->
+  on_event(:user, fn users ->
     IO.inspect(on_event: users)
     # do something with users data
   end)
 
-  on_insert(:user, fn {:ok, users} ->
+  on_insert(:user, fn users ->
     IO.inspect(on_insert: users)
   end)
 
-  on_update(:user, fn {:ok, users} ->
+  on_update(:user, fn users ->
     IO.inspect(on_update: users)
   end)
 
-  on_delete(:user, fn {:ok, users} ->
+  on_delete(:user, fn users ->
     IO.inspect(on_delete: users)
   end)
 ```
@@ -213,7 +213,7 @@ defmodule MyApp.Events.User do
     unwatched_fields: ~w(event_id updated_at todos_count)a
   }
 
-  on_insert(:user, @filters, fn {:ok, users} ->
+  on_insert(:user, @filters, fn users ->
     IO.inspect(on_insert: users)
     # resulting users data is filtered
   end)
@@ -231,7 +231,7 @@ defmodule MyApp.Events.User do
   @filters %{unwatched_records: %{event_subscribe: false}}
   @functions ~w(send_welcome_email add_to_crm)a
 
-  on_insert(:user, @filters, @functions, fn {:ok, users} ->
+  on_insert(:user, @filters, @functions, fn users ->
     IO.inspect(on_insert: users)
     # resulting users data is first filtered then functions are applied
   end)
