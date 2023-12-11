@@ -28,7 +28,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 3.1.0"}
+    {:walex, "~> 3.1.2"}
   ]
 end
 ```
@@ -179,7 +179,12 @@ Note that the result of `events` is a list. This is because WalEx returns a _Lis
 defmodule MyApp.Events.User do
   use WalEx.Event, name: MyApp
 
-  # any event
+  # any subscribed event
+  on_event(:all, fn events ->
+    IO.inspect(events: events)
+  end)
+
+  # any user event
   on_event(:user, fn users ->
     IO.inspect(on_event: users)
     # do something with users data

@@ -53,6 +53,20 @@ defmodule WalEx.Event do
         end
       end
 
+      defmacro on_event(:all, do_block) do
+        quote do
+          def process_all(txn) do
+            case txn do
+              events = %WalEx.Changes.Transaction{changes: changes} when changes != [] ->
+                unquote(do_block).(events)
+
+              _ ->
+                {:error, :no_events}
+            end
+          end
+        end
+      end
+
       defmacro on_event(table, filters \\ %{}, functions \\ [], do_block) do
         quote do
           def process_all(txn) do
