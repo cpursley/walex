@@ -21,6 +21,10 @@ defmodule WalEx.Event do
     app_name = Keyword.get(opts, :name)
 
     quote do
+      def filter_events(txn) do
+        Event.filter_and_cast(unquote(app_name), txn)
+      end
+
       def filter_events(txn, table, type, filters) do
         Event.filter_and_cast(unquote(app_name), txn, table, type, filters)
       end
@@ -56,9 +60,9 @@ defmodule WalEx.Event do
       defmacro on_event(:all, do_block) do
         quote do
           def process_all(txn) do
-            case txn do
-              events = %WalEx.Changes.Transaction{changes: changes} when changes != [] ->
-                unquote(do_block).(events)
+            case filter_events(txn) do
+              filtered_events when is_list(filtered_events) and filtered_events != [] ->
+                unquote(do_block).(filtered_events)
 
               _ ->
                 {:error, :no_events}
@@ -165,6 +169,12 @@ defmodule WalEx.Event do
   @doc """
   Filter out events by table and type (optional) from transaction and cast to Event struct
   """
+  def filter_and_cast(app_name, txn) do
+    txn
+    |> filter_subscribed(app_name)
+    |> Enum.map(&cast(&1))
+  end
+
   def filter_and_cast(app_name, txn, table, type, %{
         unwatched_records: unwatched_records,
         unwatched_fields: unwatched_fields

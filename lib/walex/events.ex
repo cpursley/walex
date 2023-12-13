@@ -17,7 +17,7 @@ defmodule WalEx.Events do
   @impl true
   def handle_call({:process, txn, server}, _from, state) do
     server
-    |> WalEx.Configs.get_configs([:modules])
+    |> WalEx.Config.get_configs([:modules])
     |> process_events(txn)
 
     {:reply, :ok, state}

@@ -123,10 +123,16 @@ config :my_app, WalEx,
   database: "postgres",
   publication: "events",
   subscriptions: [:user, :todo],
+  # optional
+  destinations: [
+    webhooks: ["https://webhook.site/a2f32b47-33ef-425c-9ed2-f369529a0de8"]
+  ],
   # modules are optional; WalEx assumes your module names match
   # this pattern: MyApp.Events.User, MyApp.Events.ToDo, etc
   # but you can also specify custom modules like so:
-  modules: [MyApp.CustomModule, MyApp.OtherCustomModule],
+  # modules: [MyApp.CustomModule, MyApp.OtherCustomModule],
+  # optional
+  webhook_signing_secret: "8da89f5f8f4717089c698a17c0d3a1869ee227de06c27b17"
   name: MyApp
 ```
 

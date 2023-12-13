@@ -121,19 +121,15 @@ defmodule WalEx.TransactionFilter do
   end
 
   @doc """
+  Returns a list of subscribed changes
+  """
+  def filter_subscribed(%Transaction{changes: changes}, app_name) do
+    Enum.filter(changes, &subscribes?(&1, app_name))
+  end
+
+  @doc """
   Returns a list of changes for the given table name and type (optional)
   """
-
-  # def filter_changes(%Transaction{changes: changes}, table, type, app_name) do
-  #   changes
-  #   |> subscribes_and_has_table(table, app_name)
-  #   |> Enum.filter(&is_type?(&1, type))
-  # end
-
-  # def filter_changes(%Transaction{changes: changes}, table, app_name) do
-  #   subscribes_and_has_table(changes, table, app_name)
-  # end
-
   def filter_changes(%Transaction{changes: changes}, table, nil, app_name) do
     subscribes_and_has_table(changes, table, app_name)
   end
@@ -153,10 +149,7 @@ defmodule WalEx.TransactionFilter do
   end
 
   def subscribes?(%{table: table}, app_name) do
-    subscriptions =
-      app_name
-      |> WalEx.Configs.get_configs([:subscriptions])
-      |> Keyword.get(:subscriptions)
+    subscriptions = WalEx.Config.get_configs(app_name, :subscriptions)
 
     String.to_atom(table) in subscriptions
   end

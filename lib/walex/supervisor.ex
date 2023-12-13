@@ -1,9 +1,11 @@
 defmodule WalEx.Supervisor do
   use Supervisor
 
-  alias WalEx.Configs, as: WalExConfigs
-  alias WalEx.DatabaseReplicationSupervisor
-  alias WalEx.Events
+  alias WalEx.Config, as: WalExConfig
+  alias WalExConfig.Registry, as: WalExRegistry
+  alias WalEx.Replication.Supervisor, as: ReplicationSupervisor
+  alias WalEx.{Destinations, Events}
+  alias Destinations.Webhooks
 
   def child_spec(opts) do
     %{
@@ -16,16 +18,14 @@ defmodule WalEx.Supervisor do
     app_name = Keyword.get(opts, :name)
     modules = Keyword.get(opts, :modules, [])
     subscriptions = Keyword.get(opts, :subscriptions)
-
-    supervisor_opts =
-      opts
-      |> Keyword.put(:modules, WalExConfigs.build_module_names(app_name, modules, subscriptions))
+    module_names = WalExConfig.build_module_names(app_name, modules, subscriptions)
+    supervisor_opts = Keyword.put(opts, :modules, module_names)
 
     validate_opts(supervisor_opts)
 
-    {:ok, _pid} = WalEx.Registry.start_registry()
+    {:ok, _pid} = WalExRegistry.start_registry()
 
-    name = WalEx.Registry.set_name(:set_supervisor, __MODULE__, app_name)
+    name = WalExRegistry.set_name(:set_supervisor, __MODULE__, app_name)
 
     Supervisor.start_link(__MODULE__, configs: supervisor_opts, name: name)
   end
@@ -41,14 +41,16 @@ defmodule WalEx.Supervisor do
     db_configs = [:hostname, :username, :password, :port, :database]
     other_configs = [:subscriptions, :publication, :modules, :name]
 
-    missing_other_configs = Enum.filter(other_configs, &(not Keyword.has_key?(opts, &1)))
-
     missing_db_configs =
       case Keyword.get(opts, :url) do
-        nil -> Enum.filter(db_configs, &(not Keyword.has_key?(opts, &1)))
-        _has_url -> []
+        nil ->
+          Enum.filter(db_configs, &(not Keyword.has_key?(opts, &1)))
+
+        _has_url ->
+          []
       end
 
+    missing_other_configs = Enum.filter(other_configs, &(not Keyword.has_key?(opts, &1)))
     missing_configs = missing_db_configs ++ missing_other_configs
 
     if not Enum.empty?(missing_configs) do
@@ -60,10 +62,22 @@ defmodule WalEx.Supervisor do
     configs = Keyword.get(opts, :configs)
     app_name = Keyword.get(configs, :name)
 
-    walex_configs = [{WalExConfigs, configs: configs}]
-    walex_db_replication_supervisor = [{DatabaseReplicationSupervisor, app_name: app_name}]
-    walex_event = if is_nil(Process.whereis(Events)), do: [{Events, []}], else: []
+    walex_configs = [{WalExConfig, configs: configs}]
+    walex_db_replication_supervisor = [{ReplicationSupervisor, app_name: app_name}]
+    walex_event = process_check(Events, [{Events, []}])
+    destinations = process_check(Destinations, [{Destinations, []}])
+    webhooks = process_check(Webhooks, [{Webhooks, []}])
 
-    walex_configs ++ walex_db_replication_supervisor ++ walex_event
+    walex_configs ++ walex_db_replication_supervisor ++ walex_event ++ destinations ++ webhooks
+  end
+
+  defp process_check(module, default) do
+    case Process.whereis(module) do
+      nil ->
+        default
+
+      _ ->
+        []
+    end
   end
 end

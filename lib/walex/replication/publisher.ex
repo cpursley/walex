@@ -1,13 +1,11 @@
-defmodule WalEx.ReplicationPublisher do
+defmodule WalEx.Replication.Publisher do
   @moduledoc """
-  Publishes messages from Replication to Events
+  Publishes messages from Replication to Events & Destinations
   """
   use GenServer
 
-  alias WalEx.Changes
-  alias WalEx.Events
+  alias WalEx.{Changes, Destinations, Events, Types}
   alias WalEx.Postgres.Decoder.Messages
-  alias WalEx.Types
 
   defmodule(State,
     do:
@@ -58,6 +56,7 @@ defmodule WalEx.ReplicationPublisher do
       )
       when commit_lsn == current_txn_lsn do
     Events.process(txn, app_name)
+    Destinations.process(txn, app_name)
 
     %{state | transaction: nil}
 

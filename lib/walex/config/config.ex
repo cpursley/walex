@@ -1,5 +1,7 @@
-defmodule WalEx.Configs do
+defmodule WalEx.Config do
   use Agent
+
+  alias WalEx.Config.Registry, as: WalExRegistry
 
   @allowed_config_value ~w(database hostname name password port publication username)a
   @allowed_config_values ~w(modules subscriptions)a
@@ -12,15 +14,23 @@ defmodule WalEx.Configs do
 
     app_name = Keyword.get(configs, :name)
 
-    name = WalEx.Registry.set_name(:set_agent, __MODULE__, app_name)
+    name = WalExRegistry.set_name(:set_agent, __MODULE__, app_name)
 
     Agent.start_link(fn -> configs end, name: name)
   end
 
-  def get_configs(app_name, keys \\ []) when is_list(keys) do
-    configs = WalEx.Registry.get_state(:get_agent, __MODULE__, app_name)
+  def get_configs(app_name, key) when is_atom(key) do
+    WalExRegistry.get_state(:get_agent, __MODULE__, app_name)
+    |> Keyword.get(key)
+  end
 
-    if Enum.empty?(keys), do: configs, else: Keyword.take(configs, keys)
+  def get_configs(app_name, keys) when is_list(keys) and keys != [] do
+    WalExRegistry.get_state(:get_agent, __MODULE__, app_name)
+    |> Keyword.take(keys)
+  end
+
+  def get_configs(app_name, _keys) do
+    WalExRegistry.get_state(:get_agent, __MODULE__, app_name)
   end
 
   def add_config(app_name, key, new_values)
@@ -73,6 +83,8 @@ defmodule WalEx.Configs do
       publication: Keyword.get(configs, :publication),
       subscriptions: subscriptions,
       modules: build_module_names(name, modules, subscriptions),
+      destinations: Keyword.get(configs, :destinations),
+      webhook_signing_secret: Keyword.get(configs, :webhook_signing_secret),
       hostname: Keyword.get(configs, :hostname, db_configs_from_url[:hostname]),
       username: Keyword.get(configs, :username, db_configs_from_url[:username]),
       password: Keyword.get(configs, :password, db_configs_from_url[:password]),
@@ -91,6 +103,7 @@ defmodule WalEx.Configs do
     |> Enum.sort()
   end
 
+  # when subscriptions is list
   def map_subscriptions_to_modules(subscriptions, name) do
     Enum.map(subscriptions, fn subscription ->
       (to_string(name) <> "." <> "Events" <> "." <> to_module_name(subscription))
@@ -142,5 +155,5 @@ defmodule WalEx.Configs do
     Keyword.put(keyword, :hostname, hostname)
   end
 
-  defp set_agent(app_name), do: WalEx.Registry.set_name(:set_agent, __MODULE__, app_name)
+  defp set_agent(app_name), do: WalEx.Config.Registry.set_name(:set_agent, __MODULE__, app_name)
 end

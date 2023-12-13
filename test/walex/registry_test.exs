@@ -1,7 +1,7 @@
-defmodule WalEx.RegistryTest do
+defmodule WalEx.Config.RegistryTest do
   use ExUnit.Case, async: false
 
-  alias WalEx.Registry, as: WalExRegistry
+  alias WalEx.Config.Registry, as: WalExRegistry
 
   describe "start_registry/0" do
     test "should start a process" do
