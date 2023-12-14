@@ -1,12 +1,11 @@
 # WalEx
 
-Postgres [Change Data Capture
+Simple and Reliable Postgres [Change Data Capture
 (CDC)](https://en.wikipedia.org/wiki/Change_data_capture) in Elixir.
 
-WalEx allows you to listen to change events on your Postgres tables then
-perform callback-like actions with the data. For example:
+WalEx allows you to listen to change events on your Postgres tables then send them on to [destinations](#destinations) or perform callback-like actions with the data via the [DSL](#elixir-dsl). For example:
 
-- Stream database changes to an external data processing service
+- Stream database changes to an event service like [EventRelay](https://github.com/eventrelay/eventrelay)
 - Send a user a welcome email after they create a new account
 - Augment an existing Postgres-backed application with business logic
 - Send events to third party services (analytics, CRM, webhooks, etc)
@@ -16,7 +15,7 @@ You can learn more about CDC and what you can do with it here: [Why capture chan
 
 ## Credit
 
-This library steals liberally from
+This library borrows liberally from
 [realtime](https://github.com/supabase/realtime) from Supabase, which in turn
 draws heavily on [cainophile](https://github.com/cainophile/cainophile).
 
@@ -314,3 +313,7 @@ Send subscribed events to one or more webhooks. Note that webhook signing uses S
 #### Event Relay
 
 If you need something more durable and flexible than webhooks, check out [EventRelay](https://github.com/eventrelay/eventrelay).
+
+#### TODO
+
+More destinations coming. Pull requests welcome!
