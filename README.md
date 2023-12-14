@@ -304,7 +304,7 @@ end
 
 ### Destinations
 
-You can optionally configure WalEx to automatically send events to _destinations_ without neededing to write any Elixir code (not Config above).
+You can optionally [configure](#config) WalEx to automatically send events to _destinations_ without even neededing to write any Elixir code.
 
 #### Webhooks
 
@@ -314,6 +314,6 @@ Send subscribed events to one or more webhooks. Note that webhook signing uses S
 
 If you need something more durable and flexible than webhooks, check out [EventRelay](https://github.com/eventrelay/eventrelay).
 
-#### TODO
+#### Coming Soon
 
 More destinations coming. Pull requests welcome!
