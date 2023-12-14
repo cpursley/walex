@@ -2,6 +2,7 @@ defmodule WalEx.Config.RegistryTest do
   use ExUnit.Case, async: false
 
   alias WalEx.Config.Registry, as: WalExRegistry
+  alias WalEx.Config.RegistryTest, as: WalExRegistryTest
 
   describe "start_registry/0" do
     test "should start a process" do
@@ -18,17 +19,17 @@ defmodule WalEx.Config.RegistryTest do
     end
 
     test "should set agent name" do
-      assert {:via, Registry, {:walex_registry, {WalEx.RegistryTest, :app_name_test}}} ==
+      assert {:via, Registry, {:walex_registry, {WalExRegistryTest, :app_name_test}}} ==
                WalExRegistry.set_name(:set_agent, __MODULE__, :app_name_test)
     end
 
     test "should set get server name" do
-      assert {:via, Registry, {:walex_registry, {WalEx.RegistryTest, :app_name_test}}} ==
+      assert {:via, Registry, {:walex_registry, {WalExRegistryTest, :app_name_test}}} ==
                WalExRegistry.set_name(:set_gen_server, __MODULE__, :app_name_test)
     end
 
     test "should set supervisor name" do
-      assert {:via, WalEx.RegistryTest, :app_name_test} ==
+      assert {:via, WalExRegistryTest, :app_name_test} ==
                WalExRegistry.set_name(:set_supervisor, __MODULE__, :app_name_test)
     end
   end
