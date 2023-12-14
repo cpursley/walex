@@ -75,7 +75,7 @@ defmodule WalEx.Config do
       |> parse_url()
 
     name = Keyword.get(configs, :name)
-    subscriptions = Keyword.get(configs, :subscriptions)
+    subscriptions = Keyword.get(configs, :subscriptions, [])
     modules = Keyword.get(configs, :modules, [])
 
     [
@@ -96,7 +96,8 @@ defmodule WalEx.Config do
     ]
   end
 
-  def build_module_names(name, modules, subscriptions) do
+  def build_module_names(name, modules, subscriptions)
+      when is_list(modules) and is_list(subscriptions) do
     subscriptions
     |> map_subscriptions_to_modules(name)
     |> Enum.concat(modules)
@@ -104,7 +105,8 @@ defmodule WalEx.Config do
     |> Enum.sort()
   end
 
-  # when subscriptions is list
+  def build_module_names(_name, _modules, _subscriptions), do: nil
+
   def map_subscriptions_to_modules(subscriptions, name) do
     Enum.map(subscriptions, fn subscription ->
       (to_string(name) <> "." <> "Events" <> "." <> to_module_name(subscription))

@@ -16,9 +16,7 @@ defmodule WalEx.Supervisor do
 
   def start_link(opts) do
     app_name = Keyword.get(opts, :name)
-    modules = Keyword.get(opts, :modules, [])
-    subscriptions = Keyword.get(opts, :subscriptions)
-    module_names = WalExConfig.build_module_names(app_name, modules, subscriptions)
+    module_names = build_module_names(app_name, opts)
     supervisor_opts = Keyword.put(opts, :modules, module_names)
 
     validate_opts(supervisor_opts)
@@ -37,25 +35,37 @@ defmodule WalEx.Supervisor do
     |> Supervisor.init(strategy: :one_for_one)
   end
 
+  defp build_module_names(app_name, opts) do
+    modules = Keyword.get(opts, :modules, [])
+    subscriptions = Keyword.get(opts, :subscriptions)
+
+    WalExConfig.build_module_names(app_name, modules, subscriptions)
+  end
+
   defp validate_opts(opts) do
-    db_configs = [:hostname, :username, :password, :port, :database]
-    other_configs = [:subscriptions, :publication, :modules, :name]
+    missing_configs = missing_db_configs(opts) ++ missing_event_configs(opts)
 
-    missing_db_configs =
-      case Keyword.get(opts, :url) do
-        nil ->
-          Enum.filter(db_configs, &(not Keyword.has_key?(opts, &1)))
-
-        _has_url ->
-          []
-      end
-
-    missing_other_configs = Enum.filter(other_configs, &(not Keyword.has_key?(opts, &1)))
-    missing_configs = missing_db_configs ++ missing_other_configs
-
-    if not Enum.empty?(missing_configs) do
-      raise "Following configs are missing: #{inspect(missing_configs)}"
+    unless Enum.empty?(missing_configs) do
+      raise "Following required configs are missing: #{inspect(missing_configs)}"
     end
+  end
+
+  defp missing_db_configs(opts) do
+    db_configs = [:hostname, :username, :password, :port, :database]
+
+    case Keyword.get(opts, :url) do
+      nil ->
+        Enum.filter(db_configs, &(not Keyword.has_key?(opts, &1)))
+
+      _has_url ->
+        []
+    end
+  end
+
+  defp missing_event_configs(opts) do
+    other_configs = [:subscriptions, :publication, :name]
+
+    Enum.filter(other_configs, &(not Keyword.has_key?(opts, &1)))
   end
 
   defp set_children(opts) do

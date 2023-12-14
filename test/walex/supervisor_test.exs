@@ -12,7 +12,7 @@ defmodule WalEx.SupervisorTest do
 
     test "should raise if any required config is missing" do
       assert_raise RuntimeError,
-                   "Following configs are missing: [:hostname, :username, :password, :port, :database, :subscriptions, :publication, :modules, :name]",
+                   "Following required configs are missing: [:hostname, :username, :password, :port, :database, :subscriptions, :publication, :name]",
                    fn -> WalExSupervisor.start_link([]) end
     end
 
@@ -47,8 +47,7 @@ defmodule WalEx.SupervisorTest do
       database: "database",
       port: 5432,
       subscriptions: ["subscriptions"],
-      publication: "publication",
-      modules: ["modules"]
+      publication: "publication"
     ]
 
     case keys do

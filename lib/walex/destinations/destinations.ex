@@ -33,11 +33,11 @@ defmodule WalEx.Destinations do
   defp process_destinations(txn, app_name) do
     filtered_events = filter_subscribed(txn, app_name)
 
-    if is_list(filtered_events) and filtered_events != [] do
-      process_event_relay(filtered_events, app_name)
-      process_webhooks(filtered_events, app_name)
-    end
+    process_event_relay(filtered_events, app_name)
+    process_webhooks(filtered_events, app_name)
   end
+
+  defp process_event_relay([], _app_name), do: :ok
 
   defp process_event_relay(filtered_events, app_name) do
     event_relay_topic = Helpers.get_event_relay_topic(app_name)
@@ -46,6 +46,8 @@ defmodule WalEx.Destinations do
       EventRelay.process(filtered_events, app_name)
     end
   end
+
+  defp process_webhooks([], _app_name), do: :ok
 
   defp process_webhooks(filtered_events, app_name) do
     webhooks = Helpers.get_webhooks(app_name)
