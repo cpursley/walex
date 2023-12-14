@@ -19,6 +19,10 @@ defmodule WalEx.Config do
     Agent.start_link(fn -> configs end, name: name)
   end
 
+  def get_configs(app_name) do
+    WalExRegistry.get_state(:get_agent, __MODULE__, app_name)
+  end
+
   def get_configs(app_name, key) when is_atom(key) do
     WalExRegistry.get_state(:get_agent, __MODULE__, app_name)
     |> Keyword.get(key)
@@ -109,7 +113,7 @@ defmodule WalEx.Config do
 
   def map_subscriptions_to_modules(subscriptions, name) do
     Enum.map(subscriptions, fn subscription ->
-      (to_string(name) <> "." <> "Events" <> "." <> to_module_name(subscription))
+      (to_module_name(name) <> "." <> "Events" <> "." <> to_module_name(subscription))
       |> String.to_atom()
     end)
   end

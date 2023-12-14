@@ -56,15 +56,18 @@ defmodule WalEx.ConfigTest do
 
     test "should return all configs when second parameter is not sent" do
       assert [
+               name: :test_name,
+               publication: "publication",
+               subscriptions: ["subscriptions"],
+               modules: [MyApp.CustomModule, :"TestName.Events.Subscriptions"],
+               destinations: nil,
+               webhook_signing_secret: nil,
+               event_relay: nil,
                hostname: "hostname",
                username: "username",
                password: "password",
                port: 5432,
                database: "database",
-               subscriptions: ["subscriptions"],
-               publication: "publication",
-               modules: ["modules"],
-               name: :test_name,
                ssl: false,
                ssl_opts: [verify: :verify_none]
              ] == Config.get_configs(:test_name)
@@ -72,8 +75,8 @@ defmodule WalEx.ConfigTest do
 
     test "should return only selected configs when second parameter is require a filter" do
       assert [
+               modules: [MyApp.CustomModule, :"TestName.Events.Subscriptions"],
                hostname: "hostname",
-               modules: ["modules"],
                ssl: false,
                ssl_opts: [verify: :verify_none]
              ] ==
@@ -89,16 +92,16 @@ defmodule WalEx.ConfigTest do
       {:ok, _pid} = Config.start_link(configs: configs)
 
       assert [
-               database: "database",
                name: :test_name,
+               database: "database",
                ssl: false,
                ssl_opts: [verify: :verify_none]
              ] ==
                Config.get_configs(:test_name, [:database, :name, :ssl, :ssl_opts])
 
       assert [
-               database: "other_database",
                name: :other_name,
+               database: "other_database",
                ssl: false,
                ssl_opts: [verify: :verify_none]
              ] ==
@@ -177,7 +180,7 @@ defmodule WalEx.ConfigTest do
       port: 5432,
       subscriptions: ["subscriptions"],
       publication: "publication",
-      modules: ["modules"],
+      modules: [MyApp.CustomModule],
       ssl: false,
       ssl_opts: [verify: :verify_none]
     ]
