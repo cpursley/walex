@@ -258,6 +258,9 @@ A common scenario is where you want to _"unsubscribe"_ from specific records (fo
 
 Another scenario is you might not care when just certain fields change. For example, maybe a database trigger sets updated_at _after_ a record is updated. Or a count changes, or several do that you don't need to react to. In this case, you can ignore the event change by adding them to *unwatched_fields*.
 
+Additional filter helpers available in the
+[WalEx.TransactionFilter](lib/walex/transaction_filter.ex) module.
+
 ```elixir
 defmodule MyApp.Events.User do
   use WalEx.Event, name: MyApp
@@ -302,7 +305,7 @@ end
 
 ### Destinations
 
-You can optionally configure WalEx to automatically send events to _destinations_ without neededing to write any Elixir code.
+You can optionally configure WalEx to automatically send events to _destinations_ without neededing to write any Elixir code (not Config above).
 
 #### Webhooks
 
@@ -311,10 +314,3 @@ Send subscribed events to one or more webhooks. Note that webhook signing uses S
 #### Event Relay
 
 If you need something more durable and flexible than webhooks, check out [EventRelay](https://github.com/eventrelay/eventrelay).
-
-Additional filter helpers available in the
-[WalEx.TransactionFilter](lib/walex/transaction_filter.ex) module.
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/walex](https://hexdocs.pm/walex).
