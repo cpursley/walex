@@ -285,7 +285,7 @@ defmodule MyApp.Events.User do
   use WalEx.Event, name: MyApp
 
   @filters %{unwatched_records: %{event_subscribe: false}}
-  @functions ~w(send_welcome_email add_to_crm)a
+  @functions ~w(send_welcome_email add_to_crm clear_cache)a
 
   on_insert(:user, @filters, @functions, fn users ->
     IO.inspect(on_insert: users)
@@ -296,8 +296,12 @@ defmodule MyApp.Events.User do
     # logic for sending welcome email to new user
   end
 
-  def add_to_crm do
+  def add_to_crm(user) do
   # logic for adding user to crm system
+  end
+
+  def clear_cache(user) do
+  # logic for clearing user cache
   end
 end
 ```
