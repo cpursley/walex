@@ -19,17 +19,7 @@ defmodule WalEx.Destinations do
 
   @impl true
   def handle_call({:process, txn, app_name}, _from, state) do
-    filtered_events = filter_subscribed(txn, app_name)
-
-    if is_list(filtered_events) and filtered_events != [] do
-      if is_binary(Helpers.get_event_relay_topic(app_name)) != "" do
-        EventRelay.process(filtered_events, app_name)
-      end
-
-      if is_list(Helpers.get_webhooks(app_name)) != [] do
-        Webhooks.process(filtered_events, app_name)
-      end
-    end
+    process_destinations(txn, app_name)
 
     {:reply, :ok, state}
   end
@@ -38,5 +28,30 @@ defmodule WalEx.Destinations do
     txn
     |> TransactionFilter.filter_subscribed(app_name)
     |> Enum.map(&Event.cast(&1))
+  end
+
+  defp process_destinations(txn, app_name) do
+    filtered_events = filter_subscribed(txn, app_name)
+
+    if is_list(filtered_events) and filtered_events != [] do
+      process_event_relay(filtered_events, app_name)
+      process_webhooks(filtered_events, app_name)
+    end
+  end
+
+  defp process_event_relay(filtered_events, app_name) do
+    event_relay_topic = Helpers.get_event_relay_topic(app_name)
+
+    if is_binary(event_relay_topic) and event_relay_topic != "" do
+      EventRelay.process(filtered_events, app_name)
+    end
+  end
+
+  defp process_webhooks(filtered_events, app_name) do
+    webhooks = Helpers.get_webhooks(app_name)
+
+    if is_list(webhooks) and webhooks != [] do
+      Webhooks.process(filtered_events, app_name)
+    end
   end
 end

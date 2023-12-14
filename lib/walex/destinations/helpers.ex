@@ -22,6 +22,6 @@ defmodule WalEx.Destinations.Helpers do
     end
   end
 
-  def get_webhooks(app_name), do: get_destination(app_name, :webooks)
+  def get_webhooks(app_name), do: get_destination(app_name, :webhooks)
   def get_event_relay_topic(app_name), do: get_destination(app_name, :event_relay_topic)
 end
