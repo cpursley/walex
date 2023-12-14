@@ -2,7 +2,7 @@ defmodule WalEx.Destinations do
   use GenServer
 
   alias WalEx.{Event, TransactionFilter}
-  alias WalEx.Destinations.Webhooks
+  alias WalEx.Destinations.{EventRelay, Helpers, Webhooks}
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -19,9 +19,17 @@ defmodule WalEx.Destinations do
 
   @impl true
   def handle_call({:process, txn, app_name}, _from, state) do
-    txn
-    |> filter_subscribed(app_name)
-    |> Webhooks.process(app_name)
+    filtered_events = filter_subscribed(txn, app_name)
+
+    if is_list(filtered_events) and filtered_events != [] do
+      if is_binary(Helpers.get_event_relay_topic(app_name)) != "" do
+        EventRelay.process(filtered_events, app_name)
+      end
+
+      if is_list(Helpers.get_webhooks(app_name)) != [] do
+        Webhooks.process(filtered_events, app_name)
+      end
+    end
 
     {:reply, :ok, state}
   end

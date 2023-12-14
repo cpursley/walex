@@ -85,6 +85,7 @@ defmodule WalEx.Config do
       modules: build_module_names(name, modules, subscriptions),
       destinations: Keyword.get(configs, :destinations),
       webhook_signing_secret: Keyword.get(configs, :webhook_signing_secret),
+      event_relay: Keyword.get(configs, :event_relay),
       hostname: Keyword.get(configs, :hostname, db_configs_from_url[:hostname]),
       username: Keyword.get(configs, :username, db_configs_from_url[:username]),
       password: Keyword.get(configs, :password, db_configs_from_url[:password]),

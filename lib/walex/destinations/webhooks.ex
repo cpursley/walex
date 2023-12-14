@@ -1,6 +1,9 @@
 defmodule WalEx.Destinations.Webhooks do
   use GenServer
 
+  alias WalEx.Config
+  alias WalEx.Destinations.Helpers
+
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
@@ -24,25 +27,15 @@ defmodule WalEx.Destinations.Webhooks do
   defp process_events(changes, app_name), do: Enum.map(changes, &process_event(&1, app_name))
 
   defp process_event(change, app_name) do
-    webhooks = get_webhooks(app_name)
+    webhooks = Helpers.get_webhooks(app_name)
     signing_secret = get_signing_secret(app_name)
 
     send_webhooks(webhooks, signing_secret, change)
   end
 
-  defp get_webhooks(app_name) do
-    case WalEx.Config.get_configs(app_name, :destinations) do
-      destinations when is_list(destinations) and destinations != [] ->
-        destinations
-        |> Keyword.get(:webhooks, nil)
-
-      _ ->
-        nil
-    end
+  defp get_signing_secret(app_name) do
+    Config.get_configs(app_name, :webhook_signing_secret)
   end
-
-  defp get_signing_secret(app_name),
-    do: WalEx.Config.get_configs(app_name, :webhook_signing_secret)
 
   defp send_webhooks(nil, _signing_secret, _change), do: :ok
 
@@ -63,13 +56,9 @@ defmodule WalEx.Destinations.Webhooks do
 
   defp set_body(event = %{table: table, type: type}) do
     table
-    |> set_type(type)
+    |> Helpers.set_type(type)
     |> event_body(event)
   end
-
-  defp set_type(table, :insert), do: to_string(table) <> ".created"
-  defp set_type(table, :update), do: to_string(table) <> ".updated"
-  defp set_type(table, :delete), do: to_string(table) <> ".updated"
 
   def event_body(type, data) do
     event_id = Uniq.UUID.uuid4()
@@ -84,7 +73,7 @@ defmodule WalEx.Destinations.Webhooks do
   end
 
   defp set_headers(body, signing_secret) do
-    user_agent = set_user_agent()
+    user_agent = Helpers.set_source()
     signature = generate_signature(body, signing_secret)
 
     [
@@ -98,8 +87,4 @@ defmodule WalEx.Destinations.Webhooks do
     :crypto.mac(:hmac, :sha256, signing_secret, body)
     |> Base.encode64()
   end
-
-  defp set_user_agent(agent \\ "WalEx/"), do: agent <> walex_version()
-
-  defp walex_version, do: Application.spec(:walex)[:vsn] |> to_string()
 end

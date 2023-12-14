@@ -5,7 +5,7 @@ defmodule WalEx.Supervisor do
   alias WalExConfig.Registry, as: WalExRegistry
   alias WalEx.Replication.Supervisor, as: ReplicationSupervisor
   alias WalEx.{Destinations, Events}
-  alias Destinations.Webhooks
+  alias Destinations.{EventRelay, Webhooks}
 
   def child_spec(opts) do
     %{
@@ -67,8 +67,14 @@ defmodule WalEx.Supervisor do
     walex_event = process_check(Events, [{Events, []}])
     destinations = process_check(Destinations, [{Destinations, []}])
     webhooks = process_check(Webhooks, [{Webhooks, []}])
+    event_relay = process_check(EventRelay, [{EventRelay, []}])
 
-    walex_configs ++ walex_db_replication_supervisor ++ walex_event ++ destinations ++ webhooks
+    walex_configs ++
+      walex_db_replication_supervisor ++
+      walex_event ++
+      destinations ++
+      webhooks ++
+      event_relay
   end
 
   defp process_check(module, default) do

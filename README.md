@@ -28,7 +28,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 3.1.2"}
+    {:walex, "~> 3.2.0"}
   ]
 end
 ```
@@ -108,7 +108,7 @@ max_replication_slots = 5
 max_slot_wal_keep_size = 2048
 ```
 
-## Usage
+## Elixir Configuration
 
 ### Config
 
@@ -124,15 +124,23 @@ config :my_app, WalEx,
   publication: "events",
   subscriptions: [:user, :todo],
   # optional
-  destinations: [
-    webhooks: ["https://webhook.site/a2f32b47-33ef-425c-9ed2-f369529a0de8"]
-  ],
-  # modules are optional; WalEx assumes your module names match
-  # this pattern: MyApp.Events.User, MyApp.Events.ToDo, etc
+  # WalEx assumes your module names match this pattern: MyApp.Events.User, MyApp.Events.ToDo, etc
   # but you can also specify custom modules like so:
   # modules: [MyApp.CustomModule, MyApp.OtherCustomModule],
   # optional
-  webhook_signing_secret: "8da89f5f8f4717089c698a17c0d3a1869ee227de06c27b17"
+  destinations: [
+    webhooks: ["https://webhook.site/c2f32b47-33ef-425c-9ed2-f369529a0de8"],
+    event_relay_topic: "postgres"
+  ],
+  # optional
+  webhook_signing_secret: "9da89f5f8f4717099c698a17c0d3a1869ee227de06c27b18",
+  # optional
+  event_relay: [
+    host: "localhost",
+    port: "50051",
+    token:
+      "cmpiNmpFSGhtNVhORFVubDFzUW9OR1JqTlFZOVFFcjRwZWMxS2VWRzJIOnY5NkFRQVFjSVp0TWVmc3hpRl8ydVZuaW9FTC0wX3JrZjhXcTE4MS1EbnVLU1p5VF9OZkpBZGs1SlFuQlNNdVg="
+  ],
   name: MyApp
 ```
 
@@ -156,7 +164,7 @@ WalEx.Configs.remove_config(MyApp, :subscriptions, "subscriptions")
 WalEx.Configs.replace_config(MyApp, :password, "new_password")
 ```
 
-### Supervisor
+### Application Supervisor
 
 ```elixir
 defmodule MyApp.Application do
@@ -173,13 +181,47 @@ defmodule MyApp.Application do
 end
 ```
 
-### Examples
+## Usage
+
+### Event
+
+Returned change data is a List of [%Event{}](lib/walex/event.ex) structs with changes provided by the
+[map_diff](https://github.com/Qqwy/elixir-map_diff) library. UPDATE event example
+where _name_ field was changed):
+
+```elixir
+[
+  %Event{
+    type: :update,
+    # the new record
+    record: %{
+      id: 1234,
+      name: "Chase Pursley",
+      ...
+    },
+    old_record: %{
+      id: 1234,
+      name: "Chase",
+      ...
+    },
+    # changes provided by the map_diff library,
+    changes: %{
+      name: %{
+        added: "Chase Pursley",
+        changed: :primitive_change,
+        removed: "Chase"
+      }
+    },
+    commit_timestamp: ~U[2023-12-06 14:32:49Z]
+  }
+]
+```
+
+### Elixir DSL
 
 If your app is named _MyApp_ and you have a subscription called _:user_ (which represents a database table), WalEx assumes you have a module called `MyApp.Events.User` that uses WalEx Event. But you can also define any custom module, just be sure to add it to the _modules_ config.
 
 Note that the result of `events` is a list. This is because WalEx returns a _List_ of  _transactions_ for a particular table when there's a change event. Often times this will just contain one result, but it could be many (for example, if you use database triggers to update a column after an insert).
-
-#### DSL
 
 ```elixir
 defmodule MyApp.Events.User do
@@ -196,6 +238,7 @@ defmodule MyApp.Events.User do
     # do something with users data
   end)
 
+  # any user insert event
   on_insert(:user, fn users ->
     IO.inspect(on_insert: users)
   end)
@@ -257,42 +300,20 @@ defmodule MyApp.Events.User do
 end
 ```
 
+### Destinations
+
+You can optionally configure WalEx to automatically send events to _destinations_ without neededing to write any Elixir code.
+
+#### Webhooks
+
+Send subscribed events to one or more webhooks. Note that webhook signing uses SHA-256 HMAC.
+
+#### Event Relay
+
+If you need something more durable and flexible than webhooks, check out [EventRelay](https://github.com/eventrelay/eventrelay).
+
 Additional filter helpers available in the
 [WalEx.TransactionFilter](lib/walex/transaction_filter.ex) module.
-
-### Event
-
-The returned data is a List of [%Event{}](lib/walex/event.ex) Structs with changes provided by the
-[map_diff](https://github.com/Qqwy/elixir-map_diff) library (UPDATE example
-where _name_ field was changed):
-
-```elixir
-[
-  %Event{
-    type: :update,
-    # the new record
-    record: %{
-      id: 1234,
-      name: "Chase Pursley",
-      ...
-    },
-    old_record: %{
-      id: 1234,
-      name: "Chase",
-      ...
-    },
-    # changes provided by the map_diff library,
-    changes: %{
-      name: %{
-        added: "Chase Pursley",
-        changed: :primitive_change,
-        removed: "Chase"
-      }
-    },
-    commit_timestamp: ~U[2023-12-06 14:32:49Z]
-  }
-]
-```
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
