@@ -78,7 +78,7 @@ CREATE PUBLICATION user_event FOR TABLE user WHERE (active IS TRUE);
 
 WalEx supports all of the settings for [REPLICA
 IDENTITY](https://www.postgresql.org/docs/current/sql-altertable.html#SQL-CREATETABLE-REPLICA-IDENTITY).
-Use `FULL` if you can use it, as it will make tracking differences easier as
+Use `FULL` if you can use it, as it will make tracking differences [easier](https://xata.io/blog/replica-identity-full-performance) as
 the old data will be sent alongside the new data. You'll need to set this for
 each table.
 
@@ -192,8 +192,8 @@ where _name_ field was changed):
 [
   %Event{
     type: :update,
-    # the new record
-    record: %{
+    table: "user"
+    new_record: %{
       id: 1234,
       name: "Chase Pursley",
       ...
@@ -207,7 +207,6 @@ where _name_ field was changed):
     changes: %{
       name: %{
         added: "Chase Pursley",
-        changed: :primitive_change,
         removed: "Chase"
       }
     },
@@ -321,3 +320,15 @@ If you need something more durable and flexible than webhooks, check out [EventR
 #### Coming Soon
 
 More destinations coming. Pull requests welcome!
+
+## Test
+
+You'll need a local Postgres setup with:
+
+- hostname: "localhost"
+- username: "postgres"
+- password: "postgres"
+
+- Create the "todos_test" database: `mix set_up_test_database`
+- Run tests: `mix test`
+- Delete test database: `mix tear_down_test_database`

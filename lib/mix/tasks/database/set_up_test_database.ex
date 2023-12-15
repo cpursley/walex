@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.SetupTestDatabase do
+defmodule Mix.Tasks.SetUpTestDatabase do
   use Mix.Task
 
   alias Mix.Tasks.Helpers
@@ -24,6 +24,7 @@ defmodule Mix.Tasks.SetupTestDatabase do
 
     create_database_logic(pid)
     create_database_tables(pid)
+    set_up_logical_replication(pid)
   end
 
   defp create_database_logic(pid) do
@@ -37,6 +38,31 @@ defmodule Mix.Tasks.SetupTestDatabase do
     create_updated_at_trigger(pid, "user")
     create_todo_table(pid)
     create_updated_at_trigger(pid, "todo")
+  end
+
+  defp set_up_logical_replication(pid) do
+    set_wal_level_to_logical(pid)
+    set_event_publications(pid)
+    set_replica_identity(pid, "user")
+    set_replica_identity(pid, "todo")
+  end
+
+  defp set_wal_level_to_logical(pid) do
+    set_wal_level = "ALTER SYSTEM SET wal_level = \'logical\';"
+
+    Postgrex.query!(pid, set_wal_level, [])
+  end
+
+  defp set_event_publications(pid) do
+    event_publications = "CREATE PUBLICATION events FOR TABLE \"user\", \"todo\";"
+
+    Postgrex.query!(pid, event_publications, [])
+  end
+
+  defp set_replica_identity(pid, table_name) do
+    replica_identity = "ALTER TABLE \"#{table_name}\" REPLICA IDENTITY FULL;"
+
+    Postgrex.query!(pid, replica_identity, [])
   end
 
   defp create_updated_at_function(pid) do

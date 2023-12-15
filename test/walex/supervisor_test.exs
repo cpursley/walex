@@ -44,7 +44,7 @@ defmodule WalEx.SupervisorTest do
       hostname: "hostname",
       username: "username",
       password: "password",
-      database: "database",
+      database: "todos_test",
       port: 5432,
       subscriptions: ["subscriptions"],
       publication: "publication"
