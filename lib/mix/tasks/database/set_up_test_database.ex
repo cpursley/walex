@@ -24,6 +24,7 @@ defmodule Mix.Tasks.SetUpTestDatabase do
 
     create_database_logic(pid)
     create_database_tables(pid)
+    seed_database_tables(pid)
     set_up_logical_replication(pid)
   end
 
@@ -125,5 +126,58 @@ defmodule Mix.Tasks.SetUpTestDatabase do
     """
 
     Postgrex.query!(pid, create_table_statement, [])
+  end
+
+  defp seed_database_tables(pid) do
+    seed_users(pid)
+    seed_todos(pid)
+  end
+
+  defp seed_users(pid) do
+    users = """
+      INSERT INTO \"user\" (email, name, age)
+      VALUES
+        ('john.doe@example.com', 'John Doe', 28),
+        ('jane.smith@example.com', 'Jane Smith', 32),
+        ('bob.jones@example.com', 'Bob Jones', 25),
+        ('alice.davis@example.com', 'Alice Davis', 34),
+        ('charlie.brown@example.com', 'Charlie Brown', 30);
+    """
+
+    Postgrex.query!(pid, users, [])
+  end
+
+  defp seed_todos(pid) do
+    todos = """
+      INSERT INTO todo (user_id, description, due_date, is_completed, priority, tags, rules)
+      VALUES
+        -- User 1 todos
+        (1, 'Buy groceries', '2023-01-10', false, 2, ARRAY['groceries', 'shopping'], '{\"reminder\": true, \"repeat\": \"weekly\"}'::JSONB),
+        (1, 'Finish work project', '2023-01-15', true, 1, ARRAY['work', 'project'], '{\"priority\": \"high\"}'::JSONB),
+        (1, 'Exercise', NULL, false, 3, ARRAY['health', 'fitness'], '{}'::JSONB),
+
+        -- User 2 todos
+        (2, 'Read a book', '2023-02-01', true, 2, ARRAY['reading', 'books'], '{\"genre\": \"mystery\"}'::JSONB),
+        (2, 'Write a blog post', '2023-02-10', false, 1, ARRAY['writing', 'blog'], '{\"format\": \"tutorial\"}'::JSONB),
+        (2, 'Plan vacation', '2023-03-01', false, 3, ARRAY['travel', 'vacation'], '{\"destination\": \"beach\"}'::JSONB),
+
+        -- User 3 todos
+        (3, 'Learn a new programming language', '2023-01-20', false, 2, ARRAY['coding', 'programming'], '{\"level\": \"intermediate\"}'::JSONB),
+        (3, 'Cook a new recipe', '2023-02-05', false, 1, ARRAY['cooking', 'recipe'], '{\"cuisine\": \"Italian\"}'::JSONB),
+        (3, 'Study for exams', '2023-02-28', true, 3, ARRAY['education', 'exams'], '{\"subject\": \"math\"}'::JSONB),
+
+        -- User 4 todos
+        (4, 'Explore hiking trails', NULL, true, 2, ARRAY['outdoors', 'hiking'], '{}'::JSONB),
+        (4, 'Complete home improvement projects', '2023-03-15', true, 1, ARRAY['home', 'projects'], '{\"room\": \"kitchen\"}'::JSONB),
+        (4, 'Attend a music concert', '2023-04-01', false, 3, ARRAY['music', 'concert'], '{\"genre\": \"rock\"}'::JSONB),
+
+        -- User 5 todos
+        (5, 'Volunteer at local community center', '2023-02-10', false, 2, ARRAY['community', 'volunteer'], '{\"activity\": \"food drive\"}'::JSONB),
+        (5, 'Practice mindfulness', NULL, false, 1, ARRAY['mindfulness', 'meditation'], '{}'::JSONB),
+        (5, 'Attend a language exchange meetup', '2023-03-05', true, 3, ARRAY['language', 'meetup'], '{\"languages\": [\"Spanish\", \"French\"]}'::JSONB)
+      ;
+    """
+
+    Postgrex.query!(pid, todos, [])
   end
 end
