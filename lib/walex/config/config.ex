@@ -3,8 +3,8 @@ defmodule WalEx.Config do
 
   alias WalEx.Config.Registry, as: WalExRegistry
 
-  @allowed_config_value ~w(database hostname name password port publication username)a
-  @allowed_config_values ~w(modules subscriptions)a
+  @allowed_config_value ~w(database hostname name password port publication username webhook_signing_secret)a
+  @allowed_config_values ~w(destinations event_relay modules subscriptions)a
 
   def start_link(opts) do
     configs =
@@ -31,10 +31,6 @@ defmodule WalEx.Config do
   def get_configs(app_name, keys) when is_list(keys) and keys != [] do
     WalExRegistry.get_state(:get_agent, __MODULE__, app_name)
     |> Keyword.take(keys)
-  end
-
-  def get_configs(app_name, _keys) do
-    WalExRegistry.get_state(:get_agent, __MODULE__, app_name)
   end
 
   def add_config(app_name, key, new_values)
@@ -118,11 +114,20 @@ defmodule WalEx.Config do
     end)
   end
 
-  def to_module_name(subscription) when is_atom(subscription) or is_binary(subscription) do
-    subscription
+  def to_module_name(module_name) when is_atom(module_name) or is_binary(module_name) do
+    module_name
     |> to_string()
-    |> String.split("_")
-    |> Enum.map_join(&String.capitalize/1)
+    |> String.replace("Elixir.", "")
+    |> String.split(["_"])
+    |> Enum.map_join(&capitalize/1)
+  end
+
+  defp capitalize(name) do
+    if String.at(name, 0) == String.upcase(String.at(name, 0)) do
+      name
+    else
+      String.capitalize(name)
+    end
   end
 
   defp parse_url(""), do: []

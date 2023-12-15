@@ -48,13 +48,13 @@ defmodule WalEx.ConfigTest do
     end
   end
 
-  describe "get_configs/2" do
+  describe "get_configs/" do
     setup do
       {:ok, _pid} = Config.start_link(configs: get_base_configs())
       :ok
     end
 
-    test "should return all configs when second parameter is not sent" do
+    test "should return all configs" do
       assert [
                name: :test_name,
                publication: "publication",
@@ -72,8 +72,19 @@ defmodule WalEx.ConfigTest do
                ssl_opts: [verify: :verify_none]
              ] == Config.get_configs(:test_name)
     end
+  end
 
-    test "should return only selected configs when second parameter is require a filter" do
+  describe "get_configs/2" do
+    setup do
+      {:ok, _pid} = Config.start_link(configs: get_base_configs())
+      :ok
+    end
+
+    test "should return only selected configs when second parameter is an atom" do
+      assert ["subscriptions"] == Config.get_configs(:test_name, :subscriptions)
+    end
+
+    test "should return only selected configs when second parameter is a list" do
       assert [
                modules: [MyApp.CustomModule, :"TestName.Events.Subscriptions"],
                hostname: "hostname",
@@ -167,6 +178,53 @@ defmodule WalEx.ConfigTest do
       Config.replace_config(:test_name, :password, "new_password")
 
       assert "new_password" == Config.get_configs(:test_name)[:password]
+    end
+  end
+
+  describe "build_module_names/3" do
+    setup do
+      {:ok, _pid} = Config.start_link(configs: get_base_configs())
+      :ok
+    end
+
+    test "should create list of modules from subscriptions config when no modules" do
+      subscriptions = ["subscriptions"]
+
+      assert [:"TestName.Events.Subscriptions"] ==
+               Config.build_module_names(:test_name, [], subscriptions)
+    end
+
+    test "should create list of modules from modules config when no subscriptions" do
+      modules = [MyApp.CustomModule]
+
+      assert modules == Config.build_module_names(:test_name, modules, [])
+    end
+
+    test "should create list of modules when both modules and subscriptions config" do
+      subscriptions = ["subscriptions"]
+      modules = [MyApp.CustomModule]
+
+      assert [MyApp.CustomModule, :"TestName.Events.Subscriptions"] ==
+               Config.build_module_names(:test_name, modules, subscriptions)
+    end
+  end
+
+  describe "to_module_name/1" do
+    setup do
+      {:ok, _pid} = Config.start_link(configs: get_base_configs())
+      :ok
+    end
+
+    test "should convert standard atom into Module atom" do
+      assert "TestName" == Config.to_module_name(:test_name)
+    end
+
+    test "should convert binary string into Module atom" do
+      assert "TestName" == Config.to_module_name("test_name")
+    end
+
+    test "should convert remove 'Elixir.' from module name" do
+      assert "TestName" == Config.to_module_name(:"Elixir.TestName")
     end
   end
 
