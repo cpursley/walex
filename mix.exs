@@ -35,8 +35,7 @@ defmodule WalEx.MixProject do
       {:timex, "~> 3.7"},
       {:req, "~> 0.4.8"},
       {:uniq, "~> 0.6.1"},
-      {:grpc, "~> 0.5.0"},
-      {:protobuf, "~> 0.11"}
+      {:eventrelay_client, github: "eventrelay/eventrelay_client_elixir", branch: "main"}
     ]
   end
 
