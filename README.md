@@ -129,7 +129,7 @@ config :my_app, WalEx,
   # optional
   destinations: [
     webhooks: ["https://webhook.site/c2f32b47-33ef-425c-9ed2-f369529a0de8"],
-    event_relay_topic: "postgres"
+    event_relay_topic: "todos"
   ],
   # optional
   webhook_signing_secret: "9da89f5f8f4717099c698a17c0d3a1869ee227de06c27b18",
@@ -315,15 +315,21 @@ end
 
 ### Destinations
 
-You can optionally [configure](#config) WalEx to automatically send events to _destinations_ without even neededing to write any Elixir code.
+You can optionally [configure](#config) WalEx to automatically send events to _destinations_ without needing to use the Elixir DSL.
 
 #### Webhooks
 
 Send subscribed events to one or more webhooks. Note that webhook signing uses SHA-256 HMAC.
 
-#### Event Relay
+#### EventRelay
 
 If you need something more durable and flexible than webhooks, check out [EventRelay](https://github.com/eventrelay/eventrelay).
+
+In EventRelay, you'll need to create a topic matching what's in the WalEx destinations config. So, if your event_relay_topic is called _todos_ (usually this is the database name), then your topic name in EventRelay should be `todos`. Here's how to do it via grpcurl:
+
+```bash
+grpcurl -H "Authorization: Bearer {api_key_token}" -plaintext -proto event_relay.proto -d '{"name": "todos"}' localhost:50051 eventrelay.Topics.CreateTopic
+```
 
 #### Coming Soon
 

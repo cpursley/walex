@@ -1,9 +1,9 @@
 defmodule WalEx.Helpers do
   alias WalEx.Config
 
-  def set_type(table, :insert), do: to_string(table) <> ".created"
-  def set_type(table, :update), do: to_string(table) <> ".updated"
-  def set_type(table, :delete), do: to_string(table) <> ".deleted"
+  def set_type(table, :insert), do: to_string(table) <> ".insert"
+  def set_type(table, :update), do: to_string(table) <> ".update"
+  def set_type(table, :delete), do: to_string(table) <> ".delete"
 
   def set_source, do: get_source_name() <> "/" <> get_source_version()
 
