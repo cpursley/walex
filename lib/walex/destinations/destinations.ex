@@ -1,8 +1,8 @@
 defmodule WalEx.Destinations do
   use GenServer
 
-  alias WalEx.{Event, TransactionFilter}
-  alias WalEx.Destinations.{EventRelay, Helpers, Webhooks}
+  alias WalEx.{Event, Destinations, Helpers, TransactionFilter}
+  alias Destinations.{EventRelay, Webhooks}
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -27,7 +27,7 @@ defmodule WalEx.Destinations do
   defp filter_subscribed(txn, app_name) do
     txn
     |> TransactionFilter.filter_subscribed(app_name)
-    |> Enum.map(&Event.cast(&1))
+    |> Event.cast_events(app_name)
   end
 
   defp process_destinations(txn, app_name) do

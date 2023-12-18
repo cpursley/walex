@@ -1,6 +1,8 @@
 # This file steals liberally from https://github.com/supabase/realtime,
 # which in turn draws on https://github.com/cainophile/pgoutput_decoder/blob/master/lib/pgoutput_decoder.ex
 
+require Protocol
+
 defmodule WalEx.Postgres.Decoder do
   defmodule Messages do
     defmodule(Begin, do: defstruct([:final_lsn, :commit_timestamp, :xid]))
@@ -268,3 +270,5 @@ defmodule WalEx.Postgres.Decoder do
   defp decode_lsn(<<xlog_file::integer-32, xlog_offset::integer-32>>),
     do: {xlog_file, xlog_offset}
 end
+
+Protocol.derive(Jason.Encoder, WalEx.Postgres.Decoder.Messages.Relation.Column)

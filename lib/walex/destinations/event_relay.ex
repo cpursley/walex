@@ -10,8 +10,7 @@ defmodule WalEx.Destinations.EventRelay do
   alias Eventrelay.PublishEventsRequest
   alias Eventrelay.NewEvent
 
-  alias WalEx.Config
-  alias WalEx.Destinations.Helpers
+  alias WalEx.{Config, Helpers}
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -69,16 +68,16 @@ defmodule WalEx.Destinations.EventRelay do
     |> Enum.map(&build_event(&1))
   end
 
-  def build_event(change = %{table: table, type: type}) do
-    case Jason.encode(change) do
-      {:ok, json} ->
+  def build_event(event = %{type: type, source: %{table: table}}) do
+    case Jason.encode(event) do
+      {:ok, data} ->
         source = Helpers.set_source()
         name = Helpers.set_type(table, type)
 
         %NewEvent{
           source: source,
           name: name,
-          data: json
+          data: data
         }
 
       error ->

@@ -1,18 +1,34 @@
+defmodule WalEx.Event.Source do
+  @derive Jason.Encoder
+  defstruct([:name, :version, :db, :schema, :table, :columns])
+
+  @type t :: %WalEx.Event.Source{
+          version: String.t(),
+          db: String.t(),
+          schema: String.t(),
+          table: String.t(),
+          columns: map()
+        }
+end
+
 defmodule WalEx.Event do
+  @derive Jason.Encoder
+  defstruct([:name, :type, :source, :new_record, :old_record, :changes, :timestamp])
+
+  @type t :: %WalEx.Event{
+          name: atom(),
+          type: :insert | :update | :delete,
+          source: WalEx.Event.Source.t(),
+          new_record: map() | nil,
+          old_record: map() | nil,
+          changes: map() | nil,
+          timestamp: DateTime.t()
+        }
+
   require Logger
   import WalEx.TransactionFilter
 
-  alias WalEx.Changes
-  alias WalEx.Event
-
-  defstruct(
-    table: nil,
-    type: nil,
-    new_record: nil,
-    old_record: nil,
-    changes: nil,
-    commit_timestamp: nil
-  )
+  alias WalEx.{Changes, Event, Helpers}
 
   @doc """
   Macros for processing events
@@ -25,8 +41,8 @@ defmodule WalEx.Event do
         Event.filter_and_cast(unquote(app_name), txn)
       end
 
-      def filter_events(txn, table, type, filters) do
-        Event.filter_and_cast(unquote(app_name), txn, table, type, filters)
+      def filter_events(txn, name, type, filters) do
+        Event.filter_and_cast(unquote(app_name), txn, name, type, filters)
       end
 
       defmacro process_events_async(events, functions) do
@@ -71,10 +87,10 @@ defmodule WalEx.Event do
         end
       end
 
-      defmacro on_event(table, filters \\ %{}, functions \\ [], do_block) do
+      defmacro on_event(name, filters \\ %{}, functions \\ [], do_block) do
         quote do
           def process_all(txn) do
-            case filter_events(txn, unquote(table), unquote(nil), unquote(filters)) do
+            case filter_events(txn, unquote(name), unquote(nil), unquote(filters)) do
               filtered_events when is_list(filtered_events) and filtered_events != [] ->
                 process_events_async(filtered_events, unquote(functions))
                 unquote(do_block).(filtered_events)
@@ -86,10 +102,10 @@ defmodule WalEx.Event do
         end
       end
 
-      defp process_event(table, type, filters, functions, do_block) do
+      defp process_event(name, type, filters, functions, do_block) do
         quote do
           def unquote(:"process_#{type}")(txn) do
-            case filter_events(txn, unquote(table), unquote(type), unquote(filters)) do
+            case filter_events(txn, unquote(name), unquote(type), unquote(filters)) do
               filtered_events when is_list(filtered_events) and filtered_events != [] ->
                 process_events_async(filtered_events, unquote(functions))
                 unquote(do_block).(filtered_events)
@@ -101,70 +117,99 @@ defmodule WalEx.Event do
         end
       end
 
-      defmacro on_insert(table, filters \\ %{}, functions \\ [], do_block) do
-        process_event(table, :insert, filters, functions, do_block)
+      defmacro on_insert(name, filters \\ %{}, functions \\ [], do_block) do
+        process_event(name, :insert, filters, functions, do_block)
       end
 
-      defmacro on_update(table, filters \\ %{}, functions \\ [], do_block) do
-        process_event(table, :update, filters, functions, do_block)
+      defmacro on_update(name, filters \\ %{}, functions \\ [], do_block) do
+        process_event(name, :update, filters, functions, do_block)
       end
 
-      defmacro on_delete(table, filters \\ %{}, functions \\ [], do_block) do
-        process_event(table, :delete, filters, functions, do_block)
+      defmacro on_delete(name, filters \\ %{}, functions \\ [], do_block) do
+        process_event(name, :delete, filters, functions, do_block)
       end
     end
   end
 
-  def cast(%Changes.NewRecord{
-        table: table,
-        type: "INSERT",
-        record: record,
-        commit_timestamp: commit_timestamp
-      }) do
+  def cast(
+        %Changes.NewRecord{
+          type: "INSERT",
+          schema: schema,
+          table: table,
+          columns: columns,
+          record: record,
+          commit_timestamp: timestamp
+        },
+        app_name
+      ) do
     %Event{
-      table: String.to_atom(table),
+      name: String.to_atom(table),
       type: :insert,
+      source: cast_source(app_name, schema, table, columns),
       new_record: record,
-      old_record: nil,
-      changes: nil,
-      commit_timestamp: commit_timestamp
+      timestamp: timestamp
     }
   end
 
-  def cast(%Changes.UpdatedRecord{
-        table: table,
-        type: "UPDATE",
-        record: record,
-        old_record: old_record,
-        commit_timestamp: commit_timestamp
-      }) do
+  def cast(
+        %Changes.UpdatedRecord{
+          type: "UPDATE",
+          schema: schema,
+          table: table,
+          columns: columns,
+          record: record,
+          old_record: old_record,
+          commit_timestamp: timestamp
+        },
+        app_name
+      ) do
     %Event{
-      table: String.to_atom(table),
+      name: String.to_atom(table),
       type: :update,
+      source: cast_source(app_name, schema, table, columns),
       new_record: record,
-      old_record: old_record,
-      changes: changes(old_record, record),
-      commit_timestamp: commit_timestamp
+      changes: map_changes(old_record, record),
+      timestamp: timestamp
     }
   end
 
-  def cast(%Changes.DeletedRecord{
-        table: table,
-        type: "DELETE",
-        old_record: old_record,
-        commit_timestamp: commit_timestamp
-      }) do
+  def cast(
+        %Changes.DeletedRecord{
+          type: "DELETE",
+          schema: schema,
+          table: table,
+          columns: columns,
+          old_record: old_record,
+          commit_timestamp: timestamp
+        },
+        app_name
+      ) do
     %Event{
-      table: String.to_atom(table),
+      name: String.to_atom(table),
       type: :delete,
-      new_record: nil,
+      source: cast_source(app_name, schema, table, columns),
       old_record: old_record,
-      changes: nil,
-      commit_timestamp: commit_timestamp
+      timestamp: timestamp
     }
   end
 
-  def cast(_event), do: nil
+  def cast(_event, _event_name), do: nil
+
+  defp cast_source(app_name, schema, table, columns) do
+    %WalEx.Event.Source{
+      name: Helpers.get_source_name(),
+      version: Helpers.get_source_version(),
+      db: Helpers.get_database(app_name),
+      schema: schema,
+      table: table,
+      columns: map_columns(columns)
+    }
+  end
+
+  def cast_events(changes, app_name) do
+    changes
+    |> Enum.map(&cast(&1, app_name))
+  end
 
   @doc """
   Filter out events by table and type (optional) from transaction and cast to Event struct
@@ -172,16 +217,17 @@ defmodule WalEx.Event do
   def filter_and_cast(app_name, txn) do
     txn
     |> filter_subscribed(app_name)
-    |> Enum.map(&cast(&1))
+    |> cast_events(app_name)
   end
 
+  # TODO: change order of filter (to before cast!)
   def filter_and_cast(app_name, txn, table, type, %{
         unwatched_records: unwatched_records,
         unwatched_fields: unwatched_fields
       }) do
     txn
     |> filter_changes(table, type, app_name)
-    |> Enum.map(&cast(&1))
+    |> cast_events(app_name)
     |> filter_unwatched_records(unwatched_records)
     |> filter_unwatched_fields(unwatched_fields)
   end
@@ -189,20 +235,20 @@ defmodule WalEx.Event do
   def filter_and_cast(app_name, txn, table, type, %{unwatched_records: unwatched_records}) do
     txn
     |> filter_changes(table, type, app_name)
-    |> Enum.map(&cast(&1))
+    |> cast_events(app_name)
     |> filter_unwatched_records(unwatched_records)
   end
 
   def filter_and_cast(app_name, txn, table, type, %{unwatched_fields: unwatched_fields}) do
     txn
     |> filter_changes(table, type, app_name)
-    |> Enum.map(&cast(&1))
+    |> cast_events(app_name)
     |> filter_unwatched_fields(unwatched_fields)
   end
 
   def filter_and_cast(app_name, txn, table, type, _filters) do
     txn
     |> filter_changes(table, type, app_name)
-    |> Enum.map(&cast(&1))
+    |> cast_events(app_name)
   end
 end

@@ -4,7 +4,7 @@ defmodule WalEx.MixProject do
   def project do
     [
       app: :walex,
-      version: "3.3.0",
+      version: "3.4.0",
       elixir: "~> 1.15",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -30,7 +30,6 @@ defmodule WalEx.MixProject do
       {:decimal, "~> 2.1.1"},
       {:ex_doc, "~> 0.31.0", only: :dev, runtime: false},
       {:jason, "~> 1.4"},
-      {:map_diff, "~> 1.3"},
       {:retry, "~> 0.18.0"},
       {:timex, "~> 3.7"},
       {:req, "~> 0.4.8"},

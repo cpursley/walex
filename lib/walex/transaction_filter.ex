@@ -9,6 +9,8 @@ defmodule WalEx.TransactionFilter do
     Transaction
   }
 
+  alias WalEx.Postgres.Decoder.Messages.Relation.Column
+
   require Logger
 
   defmodule(Filter, do: defstruct([:schema, :table, :condition]))
@@ -166,26 +168,6 @@ defmodule WalEx.TransactionFilter do
   def is_type?(%DeletedRecord{type: "DELETE"}, :delete), do: true
   def is_type?(_txn, _type), do: false
 
-  def changes(old_record, new_record) do
-    case MapDiff.diff(old_record, new_record) do
-      %{value: changes} ->
-        filter_diffs(changes)
-
-      _ ->
-        %{}
-    end
-  end
-
-  defp filter_diffs(changes) do
-    changes
-    |> Enum.filter(fn {_key, change} ->
-      if is_map(change) && Map.has_key?(change, :changed) do
-        change.changed in [:primitive_change, :map_change]
-      end
-    end)
-    |> Enum.into(%{})
-  end
-
   def filter_unwatched_fields(events, unwatched_changes) do
     Enum.filter(events, &unwatched_fields?(&1, unwatched_changes))
   end
@@ -217,6 +199,28 @@ defmodule WalEx.TransactionFilter do
   def contains_unwatched_records?(record = %{}, unwatched_records = %{}) do
     Enum.all?(unwatched_records, fn {key, value} ->
       Map.has_key?(record, key) and Map.get(record, key) == value
+    end)
+  end
+
+  def map_changes(old_record, new_record) do
+    fields = Map.keys(old_record)
+
+    Enum.reduce(fields, %{}, fn field, acc ->
+      old_value = Map.get(old_record, field)
+      new_value = Map.get(new_record, field)
+
+      if old_value != new_value do
+        Map.put(acc, field, %{old_value: old_value, new_value: new_value})
+      else
+        acc
+      end
+    end)
+  end
+
+  def map_columns(columns) do
+    Enum.reduce(columns, %{}, fn %Column{name: name, type: type}, acc ->
+      name = String.to_atom(name)
+      Map.put(acc, name, type)
     end)
   end
 end

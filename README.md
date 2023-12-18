@@ -27,7 +27,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 3.3.0"}
+    {:walex, "~> 3.4.0"}
   ]
 end
 ```
@@ -184,33 +184,41 @@ end
 
 ### Event
 
-Returned change data is a List of [%Event{}](lib/walex/event.ex) structs with changes provided by the
-[map_diff](https://github.com/Qqwy/elixir-map_diff) library. UPDATE event example
+Returned change data is a List of [%Event{}](lib/walex/event.ex) structs with changes. UPDATE event example
 where _name_ field was changed):
 
 ```elixir
 [
-  %Event{
+  %Walex.Event{
+    name: :user,
     type: :update,
-    table: "user"
+    source: %WalEx.Event.Source{
+      name: "WalEx",
+      version: "3.4.0",
+      db: "todos",
+      schema: "public",
+      table: "user",
+      columns: %{
+        id: "integer",
+        name: "varchar",
+        created_at: "timestamptz"
+      }
+    },
     new_record: %{
       id: 1234,
       name: "Chase Pursley",
-      ...
+      created_at: #DateTime<2023-08-18 14:09:05.988369-04:00 -04 Etc/UTC-4>
     },
-    old_record: %{
-      id: 1234,
-      name: "Chase",
-      ...
-    },
-    # changes provided by the map_diff library,
+    # we don't show old_record for update to reduce payload size
+    # however, you can see any old values that changed under "changes"
+    old_record: nil,
     changes: %{
       name: %{
-        added: "Chase Pursley",
-        removed: "Chase"
+        new_value: "Chase Pursley",
+        old_value: "Chase"
       }
     },
-    commit_timestamp: ~U[2023-12-06 14:32:49Z]
+    timestamp: ~U[2023-12-18 15:50:08.329504Z]
   }
 ]
 ```

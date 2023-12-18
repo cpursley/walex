@@ -1,8 +1,7 @@
 defmodule WalEx.Destinations.Webhooks do
   use GenServer
 
-  alias WalEx.Config
-  alias WalEx.Destinations.Helpers
+  alias WalEx.{Config, Helpers}
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -54,8 +53,8 @@ defmodule WalEx.Destinations.Webhooks do
     Req.post!(webhook_url, json: body, headers: headers)
   end
 
-  defp set_body(event = %{table: table, type: type}) do
-    table
+  defp set_body(event = %{name: name, type: type}) do
+    name
     |> Helpers.set_type(type)
     |> event_body(event)
   end
@@ -67,7 +66,7 @@ defmodule WalEx.Destinations.Webhooks do
     %{
       id: event_id,
       type: type,
-      data: Map.from_struct(data),
+      data: data,
       timestamp: timestamp
     }
   end
