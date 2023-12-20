@@ -153,7 +153,7 @@ defmodule WalEx.TransactionFilter do
   def subscribes?(%{table: table}, app_name) do
     subscriptions = WalEx.Config.get_configs(app_name, :subscriptions)
 
-    String.to_atom(table) in subscriptions
+    table in subscriptions
   end
 
   def has_table?(%{table: table}, table_name) when is_atom(table), do: table == table_name

@@ -27,7 +27,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 3.4.0"}
+    {:walex, "~> 3.5.0"}
   ]
 end
 ```
@@ -151,7 +151,7 @@ It is also possible to just define the URL configuration for the database
 config :my_app, WalEx,
   url: "postgres://username:password@hostname:port/database"
   publication: "events",
-  subscriptions: [:user, :todo],
+  subscriptions: ["user", "todo"],
   name: MyApp
 ```
 
@@ -194,7 +194,7 @@ where _name_ field was changed):
     type: :update,
     source: %WalEx.Event.Source{
       name: "WalEx",
-      version: "3.4.0",
+      version: "3.5.0",
       db: "todos",
       schema: "public",
       table: "user",
