@@ -121,7 +121,7 @@ config :my_app, WalEx,
   port: "5432",
   database: "postgres",
   publication: "events",
-  subscriptions: [:user, :todo],
+  subscriptions: ["user", "todo"],
   # optional
   # WalEx assumes your module names match this pattern: MyApp.Events.User, MyApp.Events.ToDo, etc
   # but you can also specify custom modules like so:
