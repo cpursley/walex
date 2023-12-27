@@ -36,4 +36,4 @@ jobs:
     - name: Install dependencies
       run: mix deps.get
     - name: Run tests
-      run: mix test
+      run: mix test --exclude skip_ci

@@ -6,7 +6,7 @@ defmodule WalEx.DatabaseTest do
   @test_database "todos_test"
 
   describe "logical replication" do
-    @tag :skip
+    @tag :skip_ci
     test "should have logical replication set up" do
       {:ok, pid} = start_database()
       show_wall_level = "SHOW wal_level;"
@@ -15,7 +15,7 @@ defmodule WalEx.DatabaseTest do
       assert [%{"wal_level" => "logical"}] == query(pid, show_wall_level)
     end
 
-    @tag :skip
+    @tag :skip_ci
     test "should start replication slot" do
       # Is starting link necessary (I think so as it creates the slot)
       assert {:ok, replication_pid} = WalExSupervisor.start_link(get_configs())
