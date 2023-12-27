@@ -315,13 +315,13 @@ end
 
 ### Destinations
 
-You can optionally [configure](#config) WalEx to automatically send events to _destinations_ without needing to use the Elixir DSL.
+You can optionally [configure](#config) WalEx to automatically send events to _destinations_ without needing to know Elixir DSL.
 
 #### Webhooks
 
-Send subscribed events to one or more webhooks. WalEx supports the [Standard Webhooks](https://www.standardwebhooks.com) spec via the [webhoox](https://github.com/cpursley/webhoox) library (which can also be used to receive webhooks).
+Send subscribed events to one or more webhooks. WalEx supports the [Standard Webhooks](https://www.standardwebhooks.com) spec via the [webhoox](https://github.com/cpursley/webhoox) library (which can also be used to receive webhooks in Elixir).
 
-#### EventRelay
+#### EventRelay (Recommended)
 
 If you need something more durable and flexible than webhooks, check out [EventRelay](https://github.com/eventrelay/eventrelay).
 
