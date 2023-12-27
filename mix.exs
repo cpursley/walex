@@ -4,7 +4,7 @@ defmodule WalEx.MixProject do
   def project do
     [
       app: :walex,
-      version: "3.5.0",
+      version: "3.6.0",
       elixir: "~> 1.15",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -35,7 +35,8 @@ defmodule WalEx.MixProject do
       {:req, "~> 0.4.8"},
       {:uniq, "~> 0.6.1"},
       # {:eventrelay_client, "~> 0.1.0"}
-      {:eventrelay_client, github: "eventrelay/eventrelay_client_elixir", branch: "main"}
+      {:eventrelay_client, github: "eventrelay/eventrelay_client_elixir", branch: "main"},
+      {:webhoox, "~> 0.3.0"}
     ]
   end
 

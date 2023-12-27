@@ -2,6 +2,7 @@ defmodule WalEx.Destinations.Webhooks do
   use GenServer
 
   alias WalEx.{Config, Helpers}
+  alias Webhoox.Authentication.StandardWebhook
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -44,11 +45,7 @@ defmodule WalEx.Destinations.Webhooks do
 
   defp send_webhook(webhook_url, signing_secret, change) do
     body = set_body(change)
-
-    headers =
-      body
-      |> Jason.encode!()
-      |> set_headers(signing_secret)
+    headers = set_headers(body, signing_secret)
 
     Req.post!(webhook_url, json: body, headers: headers)
   end
@@ -60,30 +57,24 @@ defmodule WalEx.Destinations.Webhooks do
   end
 
   def event_body(type, data) do
-    event_id = Uniq.UUID.uuid4()
-    timestamp = Timex.now() |> Timex.format!("{ISO:Extended:Z}")
-
     %{
-      id: event_id,
-      type: type,
-      data: data,
-      timestamp: timestamp
+      event_type: type,
+      data: data
     }
   end
 
   defp set_headers(body, signing_secret) do
     user_agent = Helpers.set_source()
-    signature = generate_signature(body, signing_secret)
+    id = Uniq.UUID.uuid4()
+    timestamp = :os.system_time(:second)
+    signature = StandardWebhook.sign(id, timestamp, body, signing_secret)
 
     [
       "Content-Type": "application/json",
       "User-Agent": user_agent,
-      signature: signature
+      "webhook-id": id,
+      "webhook-timestamp": Integer.to_string(timestamp),
+      "webhook-signature": signature
     ]
-  end
-
-  defp generate_signature(body, signing_secret) do
-    :crypto.mac(:hmac, :sha256, signing_secret, body)
-    |> Base.encode64()
   end
 end

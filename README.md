@@ -27,7 +27,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 3.5.0"}
+    {:walex, "~> 3.6.0"}
   ]
 end
 ```
@@ -194,7 +194,7 @@ where _name_ field was changed):
     type: :update,
     source: %WalEx.Event.Source{
       name: "WalEx",
-      version: "3.5.0",
+      version: "3.6.0",
       db: "todos",
       schema: "public",
       table: "user",
@@ -319,7 +319,7 @@ You can optionally [configure](#config) WalEx to automatically send events to _d
 
 #### Webhooks
 
-Send subscribed events to one or more webhooks. Note that webhook signing uses SHA-256 HMAC.
+Send subscribed events to one or more webhooks. WalEx supports the [Standard Webhooks](https://www.standardwebhooks.com) spec via the [webhoox](https://github.com/cpursley/webhoox) library (which can also be used to receive webhooks).
 
 #### EventRelay
 
