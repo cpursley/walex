@@ -323,7 +323,7 @@ Send subscribed events to one or more webhooks. WalEx supports the [Standard Web
 
 #### EventRelay (Recommended)
 
-If you need something more durable and flexible than webhooks, check out [EventRelay](https://github.com/eventrelay/eventrelay).
+If you need something more durable and flexible than webhooks, check out [EventRelay](https://github.com/eventrelay/eventrelay). If you don't know Elixir and prefer a simple yaml configuration-based approach, you can use [eventsql](https://github.com/eventrelay/eventsql) (WalEx under the hood) to send events to EventRelay.
 
 In EventRelay, you'll need to create a topic matching what's in the WalEx destinations config. So, if your event_relay_topic is called _todos_ (usually this is the database name), then your topic name in EventRelay should be `todos`. Here's how to do it via grpcurl:
 
