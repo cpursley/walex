@@ -339,10 +339,9 @@ More destinations coming. Pull requests welcome!
 
 You'll need a local Postgres setup with:
 
-- hostname: "localhost"
-- username: "postgres"
-- password: "postgres"
+hostname: "localhost", username: "postgres", password: "postgres"
 
-- Create the "todos_test" database: `mix set_up_test_database`
-- Run tests: `mix test`
-- Delete test database: `mix tear_down_test_database`
+Create the "todos_test" database: `mix set_up_test_database`
+Run tests: `mix test`
+Check quality: `mix quality`
+Delete test database: `mix tear_down_test_database`

@@ -139,7 +139,7 @@ defmodule WalEx.TransactionFilter do
   def filter_changes(%Transaction{changes: changes}, table, type, app_name) do
     changes
     |> subscribes_and_has_table(table, app_name)
-    |> Enum.filter(&is_type?(&1, type))
+    |> Enum.filter(&record_type?(&1, type))
   end
 
   defp subscribes_and_has_table(changes, table, app_name) do
@@ -163,10 +163,10 @@ defmodule WalEx.TransactionFilter do
 
   def has_table?(_txn, _table_name), do: false
 
-  def is_type?(%NewRecord{type: "INSERT"}, :insert), do: true
-  def is_type?(%UpdatedRecord{type: "UPDATE"}, :update), do: true
-  def is_type?(%DeletedRecord{type: "DELETE"}, :delete), do: true
-  def is_type?(_txn, _type), do: false
+  def record_type?(%NewRecord{type: "INSERT"}, :insert), do: true
+  def record_type?(%UpdatedRecord{type: "UPDATE"}, :update), do: true
+  def record_type?(%DeletedRecord{type: "DELETE"}, :delete), do: true
+  def record_type?(_txn, _type), do: false
 
   def filter_unwatched_fields(events, unwatched_changes) do
     Enum.filter(events, &unwatched_fields?(&1, unwatched_changes))
