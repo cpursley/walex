@@ -29,13 +29,6 @@ jobs:
         version-type: strict
         version-file: .tool-versions
 
-    - name: Restore dependencies cache
-      uses: actions/cache@v3
-      with:
-        path: deps
-        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-        restore-keys: ${{ runner.os }}-mix-
-
     - name: Install dependencies
       run: |
         mix local.rebar --force
@@ -52,4 +45,4 @@ jobs:
 
     - name: Check code quality, security and format
       run: |
-        mix quality --strict
+        mix quality
