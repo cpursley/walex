@@ -22,22 +22,34 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Elixir
-      uses: erlef/setup-beam@61e01a43a562a89bfc54c7f9a378ff67b03e4a21 # v1.16.0
+
+    - name: Setup Elixir
+      uses: erlef/setup-beam@v1
       with:
-        elixir-version: '1.15.2' # [Required] Define the Elixir version
-        otp-version: '26.0'      # [Required] Define the Erlang/OTP version
+        version-type: strict
+        version-file: .tool-versions
+
     - name: Restore dependencies cache
       uses: actions/cache@v3
       with:
         path: deps
         key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
         restore-keys: ${{ runner.os }}-mix-
+
     - name: Install dependencies
-      run: mix deps.get
+      run: |
+        mix local.rebar --force
+        mix local.hex --force
+        mix deps.get
+
+    - name: Check warnings
+      run: |
+        mix compile --warnings-as-errors
+
     - name: Run tests
-      run: mix test --exclude skip_ci
+      run: |
+        mix test --exclude skip_ci
+
     - name: Check code quality, security and format
       run: |
         mix quality --strict
-      working-directory: libraries/elixir
