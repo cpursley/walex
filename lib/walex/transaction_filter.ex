@@ -5,8 +5,8 @@ defmodule WalEx.TransactionFilter do
   alias WalEx.Changes.{
     DeletedRecord,
     NewRecord,
-    UpdatedRecord,
-    Transaction
+    Transaction,
+    UpdatedRecord
   }
 
   alias WalEx.Postgres.Decoder.Messages.Relation.Column

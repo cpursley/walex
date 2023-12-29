@@ -48,7 +48,7 @@ defmodule WalEx.Replication.Server do
   end
 
   @impl true
-  def handle_result([%Postgrex.Result{rows: rows} | _results], %{step: :create_slot} = state) do
+  def handle_result([%Postgrex.Result{rows: rows} | _results], state = %{step: :create_slot}) do
     slot_name = rows |> hd |> hd
 
     publication =

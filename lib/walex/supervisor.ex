@@ -2,9 +2,9 @@ defmodule WalEx.Supervisor do
   use Supervisor
 
   alias WalEx.Config, as: WalExConfig
-  alias WalExConfig.Registry, as: WalExRegistry
   alias WalEx.Replication.Supervisor, as: ReplicationSupervisor
   alias WalEx.{Destinations, Events}
+  alias WalExConfig.Registry, as: WalExRegistry
   alias Destinations.{EventRelay, Webhooks}
 
   def child_spec(opts) do

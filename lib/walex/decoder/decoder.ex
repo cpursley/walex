@@ -41,15 +41,15 @@ defmodule WalEx.Postgres.Decoder do
   alias Messages.{
     Begin,
     Commit,
+    Delete,
+    Insert,
     Origin,
     Relation,
     Relation.Column,
-    Insert,
-    Update,
-    Delete,
     Truncate,
     Type,
-    Unsupported
+    Unsupported,
+    Update
   }
 
   alias WalEx.Postgres.OidDatabase

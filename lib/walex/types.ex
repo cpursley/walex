@@ -97,7 +97,7 @@ defmodule WalEx.Types do
   #   |> String.split(",")
   # end
 
-  # # TODO: Before extracting out WalEx, create a dynamic function that can take custom decoders
+  # # TODO: Create a dynamic function that can take custom decoders
   # defp cast_record(record, "geography") when is_binary(record) do
   #   case Geo.WKB.decode(record) do
   #     {:ok, geo} ->

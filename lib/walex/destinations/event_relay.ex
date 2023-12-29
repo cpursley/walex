@@ -7,11 +7,11 @@ defmodule WalEx.Destinations.EventRelay do
 
   alias ERWeb.Grpc.Eventrelay
   alias Eventrelay.Events.Stub, as: Client
-  alias Eventrelay.PublishEventsRequest
-  alias Eventrelay.NewEvent
+  alias Eventrelay.{NewEvent, PublishEventsRequest}
 
   alias WalEx.{Config, Helpers}
 
+  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end

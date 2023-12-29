@@ -1,7 +1,7 @@
 defmodule WalEx.Destinations do
   use GenServer
 
-  alias WalEx.{Event, Destinations, Helpers, TransactionFilter}
+  alias WalEx.{Destinations, Event, Helpers, TransactionFilter}
   alias Destinations.{EventRelay, Webhooks}
 
   def start_link(_) do

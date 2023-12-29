@@ -25,6 +25,5 @@ defmodule Mix.Tasks.Helpers do
       {output, _status} ->
         output
     end
-    |> IO.inspect()
   end
 end

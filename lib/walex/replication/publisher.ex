@@ -90,10 +90,10 @@ defmodule WalEx.Replication.Publisher do
   @impl true
   def handle_cast(
         %{message: %Messages.Insert{relation_id: relation_id, tuple_data: tuple_data}},
-        %State{
+        state = %State{
           transaction: {lsn, %{commit_timestamp: commit_timestamp, changes: changes} = txn},
           relations: relations
-        } = state
+        }
       )
       when is_map(relations) do
     case Map.fetch(relations, relation_id) do
@@ -130,10 +130,10 @@ defmodule WalEx.Replication.Publisher do
             tuple_data: tuple_data
           }
         },
-        %State{
+        state = %State{
           relations: relations,
           transaction: {lsn, %{commit_timestamp: commit_timestamp, changes: changes} = txn}
-        } = state
+        }
       )
       when is_map(relations) do
     case Map.fetch(relations, relation_id) do
@@ -172,10 +172,10 @@ defmodule WalEx.Replication.Publisher do
             changed_key_tuple_data: changed_key_tuple_data
           }
         },
-        %State{
+        state = %State{
           relations: relations,
           transaction: {lsn, %{commit_timestamp: commit_timestamp, changes: changes} = txn}
-        } = state
+        }
       )
       when is_map(relations) do
     case Map.fetch(relations, relation_id) do
@@ -206,10 +206,10 @@ defmodule WalEx.Replication.Publisher do
   @impl true
   def handle_cast(
         %{message: %Messages.Truncate{truncated_relations: truncated_relations}},
-        %State{
+        state = %State{
           relations: relations,
           transaction: {lsn, %{commit_timestamp: commit_timestamp, changes: changes} = txn}
-        } = state
+        }
       )
       when is_list(truncated_relations) and is_list(changes) and is_map(relations) do
     new_changes =

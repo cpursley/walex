@@ -11,8 +11,10 @@ defmodule WalEx.MixProject do
       description: description(),
       package: package(),
       deps: deps(),
+      aliases: aliases(),
       name: "WalEx",
-      source_url: "https://github.com/cpursley/walex"
+      source_url: "https://github.com/cpursley/walex",
+      test_coverage: [tool: ExCoveralls]
     ]
   end
 
@@ -36,7 +38,12 @@ defmodule WalEx.MixProject do
       {:uniq, "~> 0.6.1"},
       {:eventrelay_client, "~> 0.1.0"},
       # {:eventrelay_client, github: "eventrelay/eventrelay_client_elixir", branch: "main"},
-      {:webhoox, "~> 0.3.0"}
+      {:webhoox, "~> 0.3.0"},
+
+      # Test
+      {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.10", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -50,6 +57,19 @@ defmodule WalEx.MixProject do
       maintainers: ["Chase Pursley"],
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/cpursley/walex"}
+    ]
+  end
+
+  defp aliases do
+    [
+      # Run tests and check coverage
+      test: ["test", "coveralls"],
+      # Run to check the quality of your code
+      quality: [
+        "format --check-formatted",
+        "sobelow --config",
+        "credo"
+      ]
     ]
   end
 end
