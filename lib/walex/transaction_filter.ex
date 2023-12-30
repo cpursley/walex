@@ -2,6 +2,10 @@
 # which in turn draws on https://github.com/cainophile/cainophile
 
 defmodule WalEx.TransactionFilter do
+  @moduledoc """
+  Filter transactions based on the relation and event type.
+  """
+
   alias WalEx.Changes.{
     DeletedRecord,
     NewRecord,

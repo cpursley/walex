@@ -16,6 +16,9 @@
 #  AND typisdefined -- Ignore undefined types
 
 defmodule WalEx.Postgres.OidDatabase do
+  @moduledoc """
+  Maps a numeric PostgreSQL type ID to a descriptive string.
+  """
   @doc """
   Maps a numeric PostgreSQL type ID to a descriptive string.
 

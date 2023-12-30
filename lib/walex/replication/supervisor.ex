@@ -1,4 +1,6 @@
 defmodule WalEx.Replication.Supervisor do
+  @moduledoc false
+
   use Supervisor
 
   alias WalEx.Replication.Server

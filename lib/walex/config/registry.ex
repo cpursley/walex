@@ -1,4 +1,8 @@
 defmodule WalEx.Config.Registry do
+  @moduledoc """
+  Configuration Registry
+  """
+
   @walex_registry :walex_registry
 
   def start_registry do

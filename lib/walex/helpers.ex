@@ -1,4 +1,8 @@
 defmodule WalEx.Helpers do
+  @moduledoc """
+  Helper functions for WalEx
+  """
+
   alias WalEx.Config
 
   def set_type(table, :insert), do: to_string(table) <> ".insert"

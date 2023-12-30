@@ -1,4 +1,5 @@
 defmodule Mix.Tasks.Helpers do
+  @moduledoc false
   def create_database(database_name) do
     "-c \"CREATE DATABASE #{database_name};\""
     |> database_cmd()

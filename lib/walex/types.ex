@@ -1,4 +1,7 @@
 defmodule WalEx.Types do
+  @moduledoc """
+  Cast from Postgres to Elixir types
+  """
   def cast_record("t", "bool"), do: true
   def cast_record("f", "bool"), do: false
 

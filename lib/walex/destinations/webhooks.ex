@@ -1,4 +1,8 @@
 defmodule WalEx.Destinations.Webhooks do
+  @moduledoc """
+  Webhooks destination
+  """
+
   use GenServer
 
   alias WalEx.{Config, Helpers}

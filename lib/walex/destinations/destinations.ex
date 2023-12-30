@@ -1,4 +1,8 @@
 defmodule WalEx.Destinations do
+  @moduledoc """
+  Process destinations
+  """
+
   use GenServer
 
   alias WalEx.{Destinations, Event, Helpers, TransactionFilter}

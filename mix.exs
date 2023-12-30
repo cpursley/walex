@@ -60,7 +60,7 @@ defmodule WalEx.MixProject do
     ]
   end
 
-  defp aliases do
+  defp aliases() do
     [
       # Run tests and check coverage
       test: ["test", "coveralls"],

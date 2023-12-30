@@ -4,6 +4,7 @@
 require Protocol
 
 defmodule WalEx.Postgres.Decoder do
+  @moduledoc false
   defmodule Messages do
     defmodule(Begin, do: defstruct([:final_lsn, :commit_timestamp, :xid]))
     defmodule(Commit, do: defstruct([:flags, :lsn, :end_lsn, :commit_timestamp]))

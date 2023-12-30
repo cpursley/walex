@@ -1,4 +1,7 @@
 defmodule WalEx.Events do
+  @moduledoc """
+  Process events (call modules containing process functions)
+  """
   use GenServer
 
   def start_link(_) do

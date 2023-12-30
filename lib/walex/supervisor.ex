@@ -1,4 +1,6 @@
 defmodule WalEx.Supervisor do
+  @moduledoc false
+
   use Supervisor
 
   alias WalEx.Config, as: WalExConfig

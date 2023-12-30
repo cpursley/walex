@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.SetUpTestDatabase do
+  @moduledoc false
+
   use Mix.Task
 
   alias Mix.Tasks.Helpers

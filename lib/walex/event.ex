@@ -1,4 +1,6 @@
 defmodule WalEx.Event.Source do
+  @moduledoc false
+
   @derive Jason.Encoder
   defstruct([:name, :version, :db, :schema, :table, :columns])
 
@@ -12,6 +14,10 @@ defmodule WalEx.Event.Source do
 end
 
 defmodule WalEx.Event do
+  @moduledoc """
+  Event DSL and casting
+  """
+
   @derive Jason.Encoder
   defstruct([:name, :type, :source, :new_record, :old_record, :changes, :timestamp])
 
