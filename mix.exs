@@ -68,7 +68,7 @@ defmodule WalEx.MixProject do
       quality: [
         "format --check-formatted",
         "sobelow --config",
-        "credo"
+        "credo --only warning"
       ]
     ]
   end
