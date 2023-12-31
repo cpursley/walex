@@ -31,4 +31,5 @@ walex-*.tar
 .vscode/
 
 # .DS_Store files from macOS
+.DS_Store
 **/.DS_Store
