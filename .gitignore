@@ -29,3 +29,7 @@ walex-*.tar
 
 # VSCode
 .vscode/
+
+# ignore .DS_Store files created by macOS
+.DS_Store
+*/.DS_Store
