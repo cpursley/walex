@@ -40,16 +40,6 @@ defmodule WalEx.ErrorTest do
     end
   end
 
-  defp query(pid, query) do
-    pid
-    |> Postgrex.query!(query, [])
-    |> map_rows_to_columns()
-  end
-
-  defp map_rows_to_columns(%Postgrex.Result{columns: columns, rows: rows}) do
-    Enum.map(rows, fn row -> Enum.zip(columns, row) |> Map.new() end)
-  end
-
   defp start_database() do
     Postgrex.start_link(
       hostname: "localhost",
