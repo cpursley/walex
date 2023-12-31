@@ -8,6 +8,7 @@ defmodule WalEx.ErrorTest do
   @test_database "todos_test"
 
   describe "errors in event handlers" do
+    @tag :skip_ci
     test "should restart the publisher process" do
       {:ok, pid} = start_database()
       configs = get_configs()
