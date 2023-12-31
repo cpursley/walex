@@ -39,10 +39,10 @@ defmodule WalEx.DatabaseTest do
   def get_configs do
     [
       name: :todos,
-      hostname: "hostname",
-      username: "username",
-      password: "password",
-      database: "todos_test",
+      hostname: "localhost",
+      username: "postgres",
+      password: "postgres",
+      database: @test_database,
       port: 5432,
       subscriptions: ["user", "todo"],
       publication: "events"
