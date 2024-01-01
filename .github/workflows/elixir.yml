@@ -41,7 +41,15 @@ jobs:
         mix deps.get
 
     - name: Set up Postgres
-      run: docker-compose -f docker-compose.dbs.yml up -d
+      run: |
+        docker-compose -f docker-compose.dbs.yml up -d
+        dockerize -wait tcp://localhost:5432 -timeout 1m
+        # Create the "todos_test" database
+        docker exec -i walex-db psql -U postgres -c "CREATE DATABASE todos_test;"
+      env:
+        POSTGRES_DB: todos_test
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
 
     - name: Set up test data
       run: mix set_up_test_database
