@@ -7,7 +7,6 @@ defmodule WalEx.Config.RegistryTest do
   describe "start_registry/0" do
     test "should start a process" do
       assert {:ok, pid} = WalExRegistry.start_registry()
-
       assert is_pid(pid)
     end
   end
