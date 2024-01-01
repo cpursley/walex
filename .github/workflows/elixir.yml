@@ -43,8 +43,15 @@ jobs:
     - name: Set up Postgres
       run: |
         docker-compose -f docker-compose.dbs.yml up -d
-        dockerize -wait tcp://localhost:5432 -timeout 1m
-        # Create the "todos_test" database
+        retries=30
+        until docker exec -i walex-db psql -U postgres -c "SELECT 1;" &>/dev/null; do
+          sleep 2
+          retries=$((retries - 1))
+          if [ "$retries" -eq 0 ]; then
+            echo "PostgreSQL did not start in time."
+            exit 1
+          fi
+        done
         docker exec -i walex-db psql -U postgres -c "CREATE DATABASE todos_test;"
       env:
         POSTGRES_DB: todos_test
