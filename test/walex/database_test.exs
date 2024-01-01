@@ -3,26 +3,28 @@ defmodule WalEx.DatabaseTest do
 
   alias WalEx.Supervisor, as: WalExSupervisor
 
-  @test_database "todos_test"
+  @hostname "localhost"
+  @username "postgres"
+  @password "postgres"
+  @database "todos_test"
 
   describe "logical replication" do
-    @tag :skip_ci
-    test "should have logical replication set up" do
+    setup do
       {:ok, pid} = start_database()
+
+      %{pid: pid}
+    end
+
+    test "should have logical replication set up", %{pid: pid} do
       show_wall_level = "SHOW wal_level;"
 
       assert is_pid(pid)
       assert [%{"wal_level" => "logical"}] == query(pid, show_wall_level)
     end
 
-    @tag :skip_ci
-    test "should start replication slot" do
-      # Is starting link necessary (I think so as it creates the slot)
+    test "should start replication slot", %{pid: database_pid} do
       assert {:ok, replication_pid} = WalExSupervisor.start_link(get_configs())
       assert is_pid(replication_pid)
-
-      {:ok, database_pid} = start_database()
-
       assert is_pid(database_pid)
 
       pg_replication_slots = "SELECT slot_name, slot_type, active FROM \"pg_replication_slots\";"
@@ -39,10 +41,10 @@ defmodule WalEx.DatabaseTest do
   def get_configs do
     [
       name: :todos,
-      hostname: "hostname",
-      username: "username",
-      password: "password",
-      database: @test_database,
+      hostname: @hostname,
+      username: @username,
+      password: @password,
+      database: @database,
       port: 5432,
       subscriptions: ["user", "todo"],
       publication: "events"
@@ -51,10 +53,10 @@ defmodule WalEx.DatabaseTest do
 
   def start_database do
     Postgrex.start_link(
-      hostname: "localhost",
-      username: "postgres",
-      password: "postgres",
-      database: @test_database
+      hostname: @hostname,
+      username: @username,
+      password: @password,
+      database: @database
     )
   end
 

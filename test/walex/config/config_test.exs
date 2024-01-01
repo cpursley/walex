@@ -2,22 +2,21 @@ defmodule WalEx.ConfigTest do
   use ExUnit.Case, async: false
 
   alias WalEx.Config
-  alias WalEx.Config.Registry, as: WalExRegistry
+  alias Config.Registry, as: WalExRegistry
 
-  setup do
-    {:ok, _pid} = WalExRegistry.start_registry()
+  setup_all do
+    assert {:ok, pid} = WalExRegistry.start_registry()
+    assert is_pid(pid)
+    :timer.sleep(1000)
     :ok
   end
 
   describe "start_link/2" do
-    @tag :skip_ci
     test "should start a process" do
       assert {:ok, pid} = Config.start_link(configs: get_base_configs())
-
       assert is_pid(pid)
     end
 
-    @tag :skip_ci
     test "should accept database url as config and split it into the right configs" do
       configs = [
         name: :test_name,
@@ -27,7 +26,8 @@ defmodule WalEx.ConfigTest do
         modules: ["modules"]
       ]
 
-      Config.start_link(configs: configs)
+      assert {:ok, pid} = Config.start_link(configs: configs)
+      assert is_pid(pid)
 
       assert [
                hostname: "hostname",
@@ -52,7 +52,8 @@ defmodule WalEx.ConfigTest do
 
   describe "get_configs/" do
     setup do
-      {:ok, _pid} = Config.start_link(configs: get_base_configs())
+      assert {:ok, pid} = Config.start_link(configs: get_base_configs())
+      assert is_pid(pid)
       :ok
     end
 
@@ -78,16 +79,15 @@ defmodule WalEx.ConfigTest do
 
   describe "get_configs/2" do
     setup do
-      {:ok, _pid} = Config.start_link(configs: get_base_configs())
+      assert {:ok, pid} = Config.start_link(configs: get_base_configs())
+      assert is_pid(pid)
       :ok
     end
 
-    @tag :skip_ci
     test "should return only selected configs when second parameter is an atom" do
       assert ["subscriptions"] == Config.get_configs(:test_name, :subscriptions)
     end
 
-    @tag :skip_ci
     test "should return only selected configs when second parameter is a list" do
       assert [
                modules: [MyApp.CustomModule, :"TestName.Events.Subscriptions"],
@@ -98,14 +98,14 @@ defmodule WalEx.ConfigTest do
                Config.get_configs(:test_name, [:modules, :hostname, :ssl, :ssl_opts])
     end
 
-    @tag :skip_ci
     test "should filter configs by process name" do
       configs =
         get_base_configs()
         |> Keyword.replace(:name, :other_name)
         |> Keyword.replace(:database, "other_database")
 
-      {:ok, _pid} = Config.start_link(configs: configs)
+      {:ok, pid} = Config.start_link(configs: configs)
+      assert is_pid(pid)
 
       assert [
                name: :test_name,
@@ -127,11 +127,11 @@ defmodule WalEx.ConfigTest do
 
   describe "add_config/3" do
     setup do
-      {:ok, _pid} = Config.start_link(configs: get_base_configs())
+      {:ok, pid} = Config.start_link(configs: get_base_configs())
+      assert is_pid(pid)
       :ok
     end
 
-    @tag :skip_ci
     test "should add new values when new_values is a list" do
       Config.add_config(:test_name, :subscriptions, [
         "new_subscriptions_1",
@@ -142,7 +142,6 @@ defmodule WalEx.ConfigTest do
                Config.get_configs(:test_name)[:subscriptions]
     end
 
-    @tag :skip_ci
     test "should add new values when new_value is not a list" do
       Config.add_config(:test_name, :subscriptions, "new_subscriptions")
 
@@ -153,11 +152,11 @@ defmodule WalEx.ConfigTest do
 
   describe "remove_config/3" do
     setup do
-      {:ok, _pid} = Config.start_link(configs: get_base_configs())
+      {:ok, pid} = Config.start_link(configs: get_base_configs())
+      assert is_pid(pid)
       :ok
     end
 
-    @tag :skip_ci
     test "should remove existing value from list if it exists" do
       Config.add_config(:test_name, :subscriptions, [
         "new_subscriptions_1",
@@ -176,11 +175,11 @@ defmodule WalEx.ConfigTest do
 
   describe "replace_config/3" do
     setup do
-      {:ok, _pid} = Config.start_link(configs: get_base_configs())
+      {:ok, pid} = Config.start_link(configs: get_base_configs())
+      assert is_pid(pid)
       :ok
     end
 
-    @tag :skip_ci
     test "should replace existing value when value is not a list" do
       assert "password" == Config.get_configs(:test_name)[:password]
 
@@ -192,11 +191,11 @@ defmodule WalEx.ConfigTest do
 
   describe "build_module_names/3" do
     setup do
-      {:ok, _pid} = Config.start_link(configs: get_base_configs())
+      {:ok, pid} = Config.start_link(configs: get_base_configs())
+      assert is_pid(pid)
       :ok
     end
 
-    @tag :skip_ci
     test "should create list of modules from subscriptions config when no modules" do
       subscriptions = ["subscriptions"]
 
@@ -204,14 +203,12 @@ defmodule WalEx.ConfigTest do
                Config.build_module_names(:test_name, [], subscriptions)
     end
 
-    @tag :skip_ci
     test "should create list of modules from modules config when no subscriptions" do
       modules = [MyApp.CustomModule]
 
       assert modules == Config.build_module_names(:test_name, modules, [])
     end
 
-    @tag :skip_ci
     test "should create list of modules when both modules and subscriptions config" do
       subscriptions = ["subscriptions"]
       modules = [MyApp.CustomModule]
@@ -223,21 +220,19 @@ defmodule WalEx.ConfigTest do
 
   describe "to_module_name/1" do
     setup do
-      {:ok, _pid} = Config.start_link(configs: get_base_configs())
+      {:ok, pid} = Config.start_link(configs: get_base_configs())
+      assert is_pid(pid)
       :ok
     end
 
-    @tag :skip_ci
     test "should convert standard atom into Module atom" do
       assert "TestName" == Config.to_module_name(:test_name)
     end
 
-    @tag :skip_ci
     test "should convert binary string into Module atom" do
       assert "TestName" == Config.to_module_name("test_name")
     end
 
-    @tag :skip_ci
     test "should convert remove 'Elixir.' from module name" do
       assert "TestName" == Config.to_module_name(:"Elixir.TestName")
     end
@@ -259,8 +254,11 @@ defmodule WalEx.ConfigTest do
     ]
 
     case keys do
-      [] -> configs
-      _keys -> Keyword.take(configs, keys)
+      [] ->
+        configs
+
+      _keys ->
+        Keyword.take(configs, keys)
     end
   end
 end

@@ -7,7 +7,6 @@ defmodule WalEx.Config.RegistryTest do
   describe "start_registry/0" do
     test "should start a process" do
       assert {:ok, pid} = WalExRegistry.start_registry()
-
       assert is_pid(pid)
     end
   end
@@ -40,7 +39,6 @@ defmodule WalEx.Config.RegistryTest do
       :ok
     end
 
-    @tag :skip_ci
     test "should set agent state" do
       name = WalExRegistry.set_name(:set_agent, __MODULE__, :app_name_test)
 
