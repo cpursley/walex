@@ -42,7 +42,7 @@ defmodule WalEx.DatabaseTest do
       hostname: "hostname",
       username: "username",
       password: "password",
-      database: "todos_test",
+      database: @test_database,
       port: 5432,
       subscriptions: ["user", "todo"],
       publication: "events"
