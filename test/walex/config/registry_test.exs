@@ -40,7 +40,6 @@ defmodule WalEx.Config.RegistryTest do
       :ok
     end
 
-    @tag :skip_ci
     test "should set agent state" do
       name = WalExRegistry.set_name(:set_agent, __MODULE__, :app_name_test)
 
