@@ -52,7 +52,7 @@ jobs:
 
     - name: Run tests
       run: |
-        mix test --exclude skip_ci
+        mix test
 
     - name: Check code quality, security and format
       run: |
