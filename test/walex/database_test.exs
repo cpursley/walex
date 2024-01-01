@@ -6,7 +6,7 @@ defmodule WalEx.DatabaseTest do
   @test_database "todos_test"
 
   describe "logical replication" do
-    @tag :skip_ci
+    # @tag :skip_ci
     test "should have logical replication set up" do
       {:ok, pid} = start_database()
       show_wall_level = "SHOW wal_level;"
