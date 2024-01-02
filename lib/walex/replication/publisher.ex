@@ -5,7 +5,7 @@ defmodule WalEx.Replication.Publisher do
   use GenServer
 
   alias WalEx.{Changes, Destinations, Events, Types}
-  alias WalEx.Postgres.Decoder.Messages
+  alias WalEx.Decoder.Messages
 
   defmodule(State,
     do:

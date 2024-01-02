@@ -3,7 +3,7 @@
 
 require Protocol
 
-defmodule WalEx.Postgres.Decoder do
+defmodule WalEx.Decoder do
   @moduledoc false
   defmodule Messages do
     defmodule(Begin, do: defstruct([:final_lsn, :commit_timestamp, :xid]))
@@ -53,7 +53,7 @@ defmodule WalEx.Postgres.Decoder do
     Update
   }
 
-  alias WalEx.Postgres.OidDatabase
+  alias WalEx.OidDatabase
 
   @doc """
   Parses logical replication messages from Postgres
@@ -61,7 +61,7 @@ defmodule WalEx.Postgres.Decoder do
   ## Examples
 
       iex> decode_message(<<73, 0, 0, 96, 0, 78, 0, 2, 116, 0, 0, 0, 3, 98, 97, 122, 116, 0, 0, 0, 3, 53, 54, 48>>)
-      %WalEx.Postgres.Decoder.Messages.Insert{relation_id: 24576, tuple_data: {"baz", "560"}}
+      %WalEx.Decoder.Messages.Insert{relation_id: 24576, tuple_data: {"baz", "560"}}
 
   """
   def decode_message(message) when is_binary(message) do
@@ -272,4 +272,4 @@ defmodule WalEx.Postgres.Decoder do
     do: {xlog_file, xlog_offset}
 end
 
-Protocol.derive(Jason.Encoder, WalEx.Postgres.Decoder.Messages.Relation.Column)
+Protocol.derive(Jason.Encoder, WalEx.Decoder.Messages.Relation.Column)

@@ -9,7 +9,7 @@ defmodule WalEx.Replication.Server do
   use Postgrex.ReplicationConnection
 
   alias WalEx.Config.Registry, as: WalExRegistry
-  alias WalEx.Postgres.Decoder
+  alias WalEx.Decoder
   alias WalEx.Replication.Publisher
 
   def start_link(opts) do
