@@ -1,7 +1,7 @@
 # This file steals liberally from https://github.com/supabase/realtime,
 # which in turn draws on https://github.com/cainophile/pgoutput_decoder/blob/master/lib/pgoutput_decoder.ex
 
-defmodule WalEx.Postgres.DecoderTest do
+defmodule WalEx.DecoderTest do
   use ExUnit.Case
 
   doctest WalEx.Decoder, import: true
