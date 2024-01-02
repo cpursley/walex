@@ -18,8 +18,10 @@ defmodule WalEx.Replication.Publisher do
 
   defstruct [:relations]
 
-  def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: __MODULE__)
+  def start_link(opts) do
+    app_name = Keyword.get(opts, :app_name)
+
+    GenServer.start_link(__MODULE__, opts, name: app_name)
   end
 
   def process_message(message, app_name) do
