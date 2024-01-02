@@ -12,7 +12,6 @@ defmodule WalEx.EventTest do
   @database "todos_test"
 
   describe "errors in event handlers" do
-    @tag :skip_ci
     test "should restart the publisher process" do
       assert {:ok, database_pid} = start_database()
       assert is_pid(database_pid)
