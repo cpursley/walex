@@ -13,7 +13,7 @@ defmodule WalEx.TransactionFilter do
     UpdatedRecord
   }
 
-  alias WalEx.Postgres.Decoder.Messages.Relation.Column
+  alias WalEx.Decoder.Messages.Relation.Column
 
   require Logger
 
@@ -27,9 +27,9 @@ defmodule WalEx.TransactionFilter do
       iex> txn = %Transaction{changes: [
       ...>   %WalEx.Changes.NewRecord{
       ...>     columns: [
-      ...>       %WalEx.Postgres.Decoder.Messages.Relation.Column{flags: [:key], name: "id", type: "int8", type_modifier: 4294967295},
-      ...>       %WalEx.Postgres.Decoder.Messages.Relation.Column{flags: [], name: "details", type: "text", type_modifier: 4294967295},
-      ...>       %WalEx.Postgres.Decoder.Messages.Relation.Column{flags: [], name: "user_id", type: "int8", type_modifier: 4294967295}
+      ...>       %WalEx.Decoder.Messages.Relation.Column{flags: [:key], name: "id", type: "int8", type_modifier: 4294967295},
+      ...>       %WalEx.Decoder.Messages.Relation.Column{flags: [], name: "details", type: "text", type_modifier: 4294967295},
+      ...>       %WalEx.Decoder.Messages.Relation.Column{flags: [], name: "user_id", type: "int8", type_modifier: 4294967295}
       ...>     ],
       ...>     commit_timestamp: nil,
       ...>     record: %{"details" => "The SCSI system is down, program the haptic microchip so we can back up the SAS circuit!", "id" => "14", "user_id" => "1"},
