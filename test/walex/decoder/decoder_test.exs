@@ -77,7 +77,6 @@ defmodule WalEx.DecoderTest do
              ]
            }
 
-    #  Adding assertion for "numeric" types, which was missing from the original implementation
     assert WalEx.Decoder.decode_message(
              <<82, 0, 0, 71, 92, 112, 117, 98, 108, 105, 99, 0, 116, 101, 109, 112, 0, 100, 0, 1,
                0, 116, 101, 115, 116, 0, 0, 0, 6, 164, 255, 255, 255, 255>>
