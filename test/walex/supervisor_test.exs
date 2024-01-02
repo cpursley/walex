@@ -8,6 +8,9 @@ defmodule WalEx.SupervisorTest do
       assert {:ok, pid} = WalExSupervisor.start_link(get_base_configs())
 
       assert is_pid(pid)
+
+      assert %{active: 6, workers: 5, supervisors: 1, specs: 6} =
+               Supervisor.count_children(pid)
     end
 
     test "should raise if any required config is missing" do
