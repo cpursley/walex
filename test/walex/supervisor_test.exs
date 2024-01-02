@@ -2,15 +2,33 @@ defmodule WalEx.SupervisorTest do
   use ExUnit.Case, async: false
 
   alias WalEx.Supervisor, as: WalExSupervisor
+  alias WalEx.Replication
+  alias Replication.Supervisor, as: ReplicationSupervisor
+  alias Replication.Server, as: ReplicationServer
+  alias Replication.Publisher, as: ReplicationPublisher
 
   describe "start_link/2" do
-    test "should start a process" do
-      assert {:ok, pid} = WalExSupervisor.start_link(get_base_configs())
-
-      assert is_pid(pid)
+    test "should start Supervisor and child processes" do
+      assert {:ok, walex_supervisor_pid} = WalExSupervisor.start_link(get_base_configs())
+      assert is_pid(walex_supervisor_pid)
 
       assert %{active: 6, workers: 5, supervisors: 1, specs: 6} =
-               Supervisor.count_children(pid)
+               Supervisor.count_children(walex_supervisor_pid)
+
+      replication_supervisor_pid =
+        find_worker_pid(walex_supervisor_pid, ReplicationSupervisor)
+
+      assert is_pid(replication_supervisor_pid)
+
+      replication_publisher_pid =
+        find_worker_pid(replication_supervisor_pid, ReplicationPublisher)
+
+      assert is_pid(replication_publisher_pid)
+
+      replication_server_pid =
+        find_worker_pid(replication_supervisor_pid, ReplicationServer)
+
+      assert is_pid(replication_server_pid)
     end
 
     test "should raise if any required config is missing" do
@@ -41,6 +59,21 @@ defmodule WalEx.SupervisorTest do
     end
   end
 
+  def find_worker_pid(supervisor_pid, child_module) do
+    case Supervisor.which_children(supervisor_pid) do
+      children when is_list(children) ->
+        find_pid(children, child_module)
+
+      _ ->
+        {:error, :supervisor_not_running}
+    end
+  end
+
+  defp find_pid(children, module_name) do
+    {_, pid, _, _} = Enum.find(children, fn {module, _, _, _} -> module == module_name end)
+    pid
+  end
+
   defp get_base_configs(keys \\ []) do
     configs = [
       name: :test_name,
@@ -54,8 +87,11 @@ defmodule WalEx.SupervisorTest do
     ]
 
     case keys do
-      [] -> configs
-      _keys -> Keyword.take(configs, keys)
+      [] ->
+        configs
+
+      _keys ->
+        Keyword.take(configs, keys)
     end
   end
 end
