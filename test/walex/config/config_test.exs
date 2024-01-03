@@ -5,7 +5,7 @@ defmodule WalEx.ConfigTest do
   alias Config.Registry, as: WalExRegistry
 
   setup_all do
-    {:ok, pid} = WalExRegistry.start_registry()
+    {:ok, _pid} = WalExRegistry.start_registry()
     :timer.sleep(1000)
     :ok
   end
@@ -51,7 +51,7 @@ defmodule WalEx.ConfigTest do
 
   describe "get_configs/" do
     setup do
-      {:ok, pid} = Config.start_link(configs: get_base_configs())
+      {:ok, _pid} = Config.start_link(configs: get_base_configs())
       :ok
     end
 
@@ -77,7 +77,7 @@ defmodule WalEx.ConfigTest do
 
   describe "get_configs/2" do
     setup do
-      {:ok, pid} = Config.start_link(configs: get_base_configs())
+      {:ok, _pid} = Config.start_link(configs: get_base_configs())
       :ok
     end
 
@@ -124,7 +124,7 @@ defmodule WalEx.ConfigTest do
 
   describe "add_config/3" do
     setup do
-      {:ok, pid} = Config.start_link(configs: get_base_configs())
+      {:ok, _pid} = Config.start_link(configs: get_base_configs())
       :ok
     end
 
@@ -148,7 +148,7 @@ defmodule WalEx.ConfigTest do
 
   describe "remove_config/3" do
     setup do
-      {:ok, pid} = Config.start_link(configs: get_base_configs())
+      {:ok, _pid} = Config.start_link(configs: get_base_configs())
       :ok
     end
 
@@ -170,7 +170,7 @@ defmodule WalEx.ConfigTest do
 
   describe "replace_config/3" do
     setup do
-      {:ok, pid} = Config.start_link(configs: get_base_configs())
+      {:ok, _pid} = Config.start_link(configs: get_base_configs())
       :ok
     end
 
@@ -185,7 +185,7 @@ defmodule WalEx.ConfigTest do
 
   describe "build_module_names/3" do
     setup do
-      {:ok, pid} = Config.start_link(configs: get_base_configs())
+      {:ok, _pid} = Config.start_link(configs: get_base_configs())
       :ok
     end
 
@@ -213,7 +213,7 @@ defmodule WalEx.ConfigTest do
 
   describe "to_module_name/1" do
     setup do
-      {:ok, pid} = Config.start_link(configs: get_base_configs())
+      {:ok, _pid} = Config.start_link(configs: get_base_configs())
       :ok
     end
 
