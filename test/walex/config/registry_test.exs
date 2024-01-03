@@ -13,7 +13,7 @@ defmodule WalEx.Config.RegistryTest do
 
   describe "set_name/3" do
     setup do
-      assert {:ok, _pid} = WalExRegistry.start_registry()
+      {:ok, _pid} = WalExRegistry.start_registry()
       :ok
     end
 
@@ -35,7 +35,7 @@ defmodule WalEx.Config.RegistryTest do
 
   describe "get_state/3" do
     setup do
-      assert {:ok, _pid} = WalExRegistry.start_registry()
+      {:ok, _pid} = WalExRegistry.start_registry()
       :ok
     end
 

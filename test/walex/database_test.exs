@@ -10,22 +10,21 @@ defmodule WalEx.DatabaseTest do
 
   describe "logical replication" do
     setup do
-      {:ok, pid} = start_database()
+      {:ok, database_pid} = start_database()
 
-      %{pid: pid}
+      %{database_pid: database_pid}
     end
 
-    test "should have logical replication set up", %{pid: pid} do
+    test "should have logical replication set up", %{database_pid: pid} do
       show_wall_level = "SHOW wal_level;"
 
       assert is_pid(pid)
       assert [%{"wal_level" => "logical"}] == query(pid, show_wall_level)
     end
 
-    test "should start replication slot", %{pid: database_pid} do
+    test "should start replication slot", %{database_pid: database_pid} do
       assert {:ok, replication_pid} = WalExSupervisor.start_link(get_configs())
       assert is_pid(replication_pid)
-      assert is_pid(database_pid)
 
       pg_replication_slots = "SELECT slot_name, slot_type, active FROM \"pg_replication_slots\";"
 
