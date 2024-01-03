@@ -11,8 +11,8 @@ defmodule WalEx.EventTest do
   @password "postgres"
   @database "todos_test"
 
-  describe "errors in event handlers" do
-    test "should restart the publisher process" do
+  describe "process_all/1" do
+    test "should restart the publisher process when error in handlers" do
       assert {:ok, database_pid} = start_database()
       assert is_pid(database_pid)
       {:ok, supervisor_pid} = WalExSupervisor.start_link(get_configs())
@@ -22,9 +22,10 @@ defmodule WalEx.EventTest do
         UPDATE \"user\" SET age = 30 WHERE id = 1
       """
 
-      Postgrex.query!(database_pid, update_user, [])
-
       # How can we test this? TestModule does not seem to get called.
+      assert_raise "test error", fn ->
+        Postgrex.query!(database_pid, update_user, [])
+      end
     end
   end
 
