@@ -5,7 +5,7 @@ defmodule WalEx.EventTest do
 
   require Logger
 
-  @app_name :test_name
+  @app_name :test_app
   @hostname "localhost"
   @username "postgres"
   @password "postgres"
@@ -25,6 +25,7 @@ defmodule WalEx.EventTest do
       # How can we test this? TestModule does not seem to get called.
       assert_raise "test error", fn ->
         Postgrex.query!(database_pid, update_user, [])
+        |> tap(&Logger.debug("Updated user: #{inspect(&1, pretty: true)}"))
       end
     end
   end
@@ -46,9 +47,9 @@ defmodule WalEx.EventTest do
       password: @password,
       database: @database,
       port: 5432,
-      subscriptions: [:user, :todo],
+      subscriptions: ["user", "todo"],
       publication: ["events"],
-      modules: [TestName.TestModule]
+      modules: [TestApp.TestModule]
     ]
 
     case keys do
@@ -61,8 +62,8 @@ defmodule WalEx.EventTest do
   end
 end
 
-defmodule TestName.TestModule do
-  use WalEx.Event, name: :test_name
+defmodule TestApp.TestModule do
+  use WalEx.Event, name: :test_app
 
   require Logger
 
