@@ -12,10 +12,8 @@ defmodule WalEx.EventTest do
 
   describe "process_all/1" do
     setup do
-      assert {:ok, database_pid} = start_database()
-      assert is_pid(database_pid)
-      assert {:ok, supervisor_pid} = WalExSupervisor.start_link(get_configs())
-      assert is_pid(supervisor_pid)
+      {:ok, database_pid} = start_database()
+      {:ok, _pid} = WalExSupervisor.start_link(get_configs())
 
       %{database_pid: database_pid}
     end
@@ -92,12 +90,12 @@ defmodule WalEx.EventTest do
       new_events_pid = Process.whereis(WalEx.Events)
 
       assert is_pid(new_events_pid)
-      assert events_pid != new_events_pid
+      refute events_pid == new_events_pid
 
       new_replication_publisher_pid = Process.whereis(ReplicationPublisher)
 
       assert is_pid(new_replication_publisher_pid)
-      assert replication_publisher_pid != new_replication_publisher_pid
+      refute replication_publisher_pid == new_replication_publisher_pid
     end
   end
 
