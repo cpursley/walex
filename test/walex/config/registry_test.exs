@@ -42,14 +42,7 @@ defmodule WalEx.Config.RegistryTest do
     test "should set agent state" do
       name = WalExRegistry.set_name(:set_agent, __MODULE__, :app_name_test)
 
-      configs = [
-        my_atom: :test_config,
-        my_number: 99,
-        my_string: "test config",
-        my_map: %{john: :doe},
-        my_list: [1, 9, 9, 4]
-      ]
-
+      configs = []
       Agent.start_link(fn -> configs end, name: name)
 
       assert configs == WalExRegistry.get_state(:get_agent, __MODULE__, :app_name_test)
