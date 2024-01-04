@@ -1,15 +1,28 @@
-defmodule WalEx.Events do
+defmodule WalEx.Destinations.EventModules do
   @moduledoc """
   Process events (call modules containing process functions)
   """
   use GenServer
 
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  alias WalEx.Config.Registry
+
+  def start_link(opts) do
+    name =
+      opts
+      |> Keyword.get(:app_name)
+      |> registry_name
+
+    GenServer.start_link(__MODULE__, opts, name: name)
   end
 
-  def process(txn, server) do
-    GenServer.call(__MODULE__, {:process, txn, server}, :infinity)
+  def process(txn, app_name) do
+    name = registry_name(app_name)
+
+    GenServer.call(name, {:process, txn, app_name}, :infinity)
+  end
+
+  defp registry_name(app_name) do
+    Registry.set_name(:set_gen_server, __MODULE__, app_name)
   end
 
   @impl true
