@@ -1,8 +1,8 @@
 defmodule WalEx.EventTest do
   use ExUnit.Case, async: false
+  import WalEx.Support.TestHelpers
 
   alias WalEx.Supervisor, as: WalExSupervisor
-  alias WalEx.Replication.Publisher, as: ReplicationPublisher
 
   @app_name :test_app
   @hostname "localhost"
@@ -10,12 +10,24 @@ defmodule WalEx.EventTest do
   @password "postgres"
   @database "todos_test"
 
+  @base_configs [
+    name: @app_name,
+    hostname: @hostname,
+    username: @username,
+    password: @password,
+    database: @database,
+    port: 5432,
+    subscriptions: ["user", "todo"],
+    publication: ["events"],
+    modules: [TestApp.TestModule]
+  ]
+
   describe "process_all/1" do
     setup do
       {:ok, database_pid} = start_database()
-      {:ok, _pid} = WalExSupervisor.start_link(get_configs())
+      {:ok, supervisor_pid} = WalExSupervisor.start_link(@base_configs)
 
-      %{database_pid: database_pid}
+      %{database_pid: database_pid, supervisor_pid: supervisor_pid}
     end
 
     test "should successfully receive Transaction", %{database_pid: database_pid} do
@@ -58,17 +70,23 @@ defmodule WalEx.EventTest do
            :test_app
          }}
       }
-
-      assert is_pid(Process.whereis(ReplicationPublisher))
     end
 
     test "should restart the Publisher & Events processes when error", %{
-      database_pid: database_pid
+      database_pid: database_pid,
+      supervisor_pid: supervisor_pid
     } do
       events_pid = Process.whereis(WalEx.Events)
       assert is_pid(events_pid)
 
-      replication_publisher_pid = Process.whereis(ReplicationPublisher)
+      replication_supervisor_pid =
+        find_worker_pid(supervisor_pid, WalEx.Replication.Supervisor)
+
+      assert is_pid(replication_supervisor_pid)
+
+      replication_publisher_pid =
+        find_worker_pid(replication_supervisor_pid, WalEx.Replication.Publisher)
+
       assert is_pid(replication_publisher_pid)
 
       update_user(database_pid)
@@ -92,7 +110,8 @@ defmodule WalEx.EventTest do
       assert is_pid(new_events_pid)
       refute events_pid == new_events_pid
 
-      new_replication_publisher_pid = Process.whereis(ReplicationPublisher)
+      new_replication_publisher_pid =
+        find_worker_pid(replication_supervisor_pid, WalEx.Replication.Publisher)
 
       assert is_pid(new_replication_publisher_pid)
       refute replication_publisher_pid == new_replication_publisher_pid
@@ -107,27 +126,13 @@ defmodule WalEx.EventTest do
     Postgrex.query!(database_pid, update_user, [])
   end
 
-  defp start_database() do
+  defp start_database do
     Postgrex.start_link(
       hostname: @hostname,
       username: @username,
       password: @password,
       database: @database
     )
-  end
-
-  defp get_configs do
-    [
-      name: @app_name,
-      hostname: @hostname,
-      username: @username,
-      password: @password,
-      database: @database,
-      port: 5432,
-      subscriptions: ["user", "todo"],
-      publication: ["events"],
-      modules: [TestApp.TestModule]
-    ]
   end
 end
 
