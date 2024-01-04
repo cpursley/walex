@@ -4,7 +4,7 @@ defmodule WalEx.Replication.Publisher do
   """
   use GenServer
 
-  alias WalEx.{Changes, Destinations, Events, Types}
+  alias WalEx.{Changes, Config, Destinations, Events, Types}
   alias WalEx.Decoder.Messages
 
   defmodule(State,
@@ -19,15 +19,26 @@ defmodule WalEx.Replication.Publisher do
   defstruct [:relations]
 
   def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+    name =
+      opts
+      |> Keyword.get(:app_name)
+      |> registry_name
+
+    GenServer.start_link(__MODULE__, opts, name: name)
   end
 
   def process_message(message, app_name) do
-    GenServer.cast(__MODULE__, %{message: message, app_name: app_name})
+    name = registry_name(app_name)
+
+    GenServer.cast(name, %{message: message, app_name: app_name})
+  end
+
+  defp registry_name(app_name) do
+    Config.Registry.set_name(:set_gen_server, __MODULE__, app_name)
   end
 
   @impl true
-  def init(_) do
+  def init(_opts) do
     Process.flag(:message_queue_data, :off_heap)
 
     {:ok, %State{}}

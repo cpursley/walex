@@ -5,7 +5,6 @@ defmodule WalEx.Replication.Server do
   @moduledoc """
   This module is responsible for setting up the replication connection
   """
-
   use Postgrex.ReplicationConnection
 
   alias WalEx.Config.Registry, as: WalExRegistry

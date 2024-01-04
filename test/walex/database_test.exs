@@ -8,6 +8,17 @@ defmodule WalEx.DatabaseTest do
   @password "postgres"
   @database "todos_test"
 
+  @base_configs [
+    name: :todos,
+    hostname: @hostname,
+    username: @username,
+    password: @password,
+    database: @database,
+    port: 5432,
+    subscriptions: ["user", "todo"],
+    publication: "events"
+  ]
+
   describe "logical replication" do
     setup do
       {:ok, database_pid} = start_database()
@@ -23,7 +34,7 @@ defmodule WalEx.DatabaseTest do
     end
 
     test "should start replication slot", %{database_pid: database_pid} do
-      assert {:ok, replication_pid} = WalExSupervisor.start_link(get_configs())
+      assert {:ok, replication_pid} = WalExSupervisor.start_link(@base_configs)
       assert is_pid(replication_pid)
 
       pg_replication_slots = "SELECT slot_name, slot_type, active FROM \"pg_replication_slots\";"
@@ -35,19 +46,6 @@ defmodule WalEx.DatabaseTest do
 
       assert String.contains?(slot_name, "walex_temp_slot")
     end
-  end
-
-  def get_configs do
-    [
-      name: :todos,
-      hostname: @hostname,
-      username: @username,
-      password: @password,
-      database: @database,
-      port: 5432,
-      subscriptions: ["user", "todo"],
-      publication: "events"
-    ]
   end
 
   def start_database do
