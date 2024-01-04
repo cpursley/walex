@@ -4,16 +4,29 @@ defmodule WalEx.ConfigTest do
   alias WalEx.Config
   alias Config.Registry, as: WalExRegistry
 
+  @base_configs [
+    name: :test_name,
+    hostname: "hostname",
+    username: "username",
+    password: "password",
+    database: "database",
+    port: 5432,
+    subscriptions: ["subscriptions"],
+    publication: "publication",
+    modules: [MyApp.CustomModule],
+    ssl: false,
+    ssl_opts: [verify: :verify_none]
+  ]
+
   setup_all do
-    assert {:ok, pid} = WalExRegistry.start_registry()
-    assert is_pid(pid)
+    {:ok, _pid} = WalExRegistry.start_registry()
     :timer.sleep(1000)
     :ok
   end
 
   describe "start_link/2" do
     test "should start a process" do
-      assert {:ok, pid} = Config.start_link(configs: get_base_configs())
+      {:ok, pid} = Config.start_link(configs: @base_configs)
       assert is_pid(pid)
     end
 
@@ -26,7 +39,7 @@ defmodule WalEx.ConfigTest do
         modules: ["modules"]
       ]
 
-      assert {:ok, pid} = Config.start_link(configs: configs)
+      {:ok, pid} = Config.start_link(configs: configs)
       assert is_pid(pid)
 
       assert [
@@ -52,8 +65,7 @@ defmodule WalEx.ConfigTest do
 
   describe "get_configs/" do
     setup do
-      assert {:ok, pid} = Config.start_link(configs: get_base_configs())
-      assert is_pid(pid)
+      {:ok, _pid} = Config.start_link(configs: @base_configs)
       :ok
     end
 
@@ -79,8 +91,7 @@ defmodule WalEx.ConfigTest do
 
   describe "get_configs/2" do
     setup do
-      assert {:ok, pid} = Config.start_link(configs: get_base_configs())
-      assert is_pid(pid)
+      {:ok, _pid} = Config.start_link(configs: @base_configs)
       :ok
     end
 
@@ -100,7 +111,7 @@ defmodule WalEx.ConfigTest do
 
     test "should filter configs by process name" do
       configs =
-        get_base_configs()
+        @base_configs
         |> Keyword.replace(:name, :other_name)
         |> Keyword.replace(:database, "other_database")
 
@@ -127,8 +138,7 @@ defmodule WalEx.ConfigTest do
 
   describe "add_config/3" do
     setup do
-      {:ok, pid} = Config.start_link(configs: get_base_configs())
-      assert is_pid(pid)
+      {:ok, _pid} = Config.start_link(configs: @base_configs)
       :ok
     end
 
@@ -152,8 +162,7 @@ defmodule WalEx.ConfigTest do
 
   describe "remove_config/3" do
     setup do
-      {:ok, pid} = Config.start_link(configs: get_base_configs())
-      assert is_pid(pid)
+      {:ok, _pid} = Config.start_link(configs: @base_configs)
       :ok
     end
 
@@ -175,8 +184,7 @@ defmodule WalEx.ConfigTest do
 
   describe "replace_config/3" do
     setup do
-      {:ok, pid} = Config.start_link(configs: get_base_configs())
-      assert is_pid(pid)
+      {:ok, _pid} = Config.start_link(configs: @base_configs)
       :ok
     end
 
@@ -191,8 +199,7 @@ defmodule WalEx.ConfigTest do
 
   describe "build_module_names/3" do
     setup do
-      {:ok, pid} = Config.start_link(configs: get_base_configs())
-      assert is_pid(pid)
+      {:ok, _pid} = Config.start_link(configs: @base_configs)
       :ok
     end
 
@@ -220,8 +227,7 @@ defmodule WalEx.ConfigTest do
 
   describe "to_module_name/1" do
     setup do
-      {:ok, pid} = Config.start_link(configs: get_base_configs())
-      assert is_pid(pid)
+      {:ok, _pid} = Config.start_link(configs: @base_configs)
       :ok
     end
 
@@ -235,30 +241,6 @@ defmodule WalEx.ConfigTest do
 
     test "should convert remove 'Elixir.' from module name" do
       assert "TestName" == Config.to_module_name(:"Elixir.TestName")
-    end
-  end
-
-  defp get_base_configs(keys \\ []) do
-    configs = [
-      name: :test_name,
-      hostname: "hostname",
-      username: "username",
-      password: "password",
-      database: "database",
-      port: 5432,
-      subscriptions: ["subscriptions"],
-      publication: "publication",
-      modules: [MyApp.CustomModule],
-      ssl: false,
-      ssl_opts: [verify: :verify_none]
-    ]
-
-    case keys do
-      [] ->
-        configs
-
-      _keys ->
-        Keyword.take(configs, keys)
     end
   end
 end
