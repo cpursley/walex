@@ -10,14 +10,25 @@ defmodule WalEx.Destinations.EventRelay do
   alias Eventrelay.{NewEvent, PublishEventsRequest}
 
   alias WalEx.{Config, Helpers}
+  alias Config.Registry
 
-  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  def start_link(opts) do
+    name =
+      opts
+      |> Keyword.get(:app_name)
+      |> registry_name
+
+    GenServer.start_link(__MODULE__, opts, name: name)
   end
 
   def process(changes, app_name) do
-    GenServer.call(__MODULE__, {:process, changes, app_name}, :infinity)
+    name = registry_name(app_name)
+
+    GenServer.call(name, {:process, changes, app_name}, :infinity)
+  end
+
+  defp registry_name(app_name) do
+    Registry.set_name(:set_gen_server, __MODULE__, app_name)
   end
 
   @impl true

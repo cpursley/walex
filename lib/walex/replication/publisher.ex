@@ -4,7 +4,7 @@ defmodule WalEx.Replication.Publisher do
   """
   use GenServer
 
-  alias WalEx.{Changes, Config, Destinations, Events, Types}
+  alias WalEx.{Changes, Config, Destinations, Types}
   alias WalEx.Decoder.Messages
 
   defmodule(State,
@@ -66,7 +66,6 @@ defmodule WalEx.Replication.Publisher do
         %State{transaction: {current_txn_lsn, txn}, relations: _relations} = state
       )
       when commit_lsn == current_txn_lsn do
-    Events.process(txn, app_name)
     Destinations.process(txn, app_name)
 
     %{state | transaction: nil}

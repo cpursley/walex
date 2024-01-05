@@ -23,6 +23,12 @@ defmodule WalEx.Config do
     Agent.start_link(fn -> configs end, name: name)
   end
 
+  def has_config?(configs, key) when is_list(configs) do
+    Keyword.has_key?(configs, key) and not is_nil(Keyword.get(configs, key))
+  end
+
+  def has_config?(_configs, _key), do: false
+
   def get_configs(app_name) do
     WalExRegistry.get_state(:get_agent, __MODULE__, app_name)
   end

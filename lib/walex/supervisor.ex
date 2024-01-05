@@ -4,10 +4,9 @@ defmodule WalEx.Supervisor do
   use Supervisor
 
   alias WalEx.Config, as: WalExConfig
+  alias WalEx.Destinations.Supervisor, as: DestinationsSupervisor
   alias WalEx.Replication.Supervisor, as: ReplicationSupervisor
-  alias WalEx.{Destinations, Events}
   alias WalExConfig.Registry, as: WalExRegistry
-  alias Destinations.{EventRelay, Webhooks}
 
   def child_spec(opts) do
     %{
@@ -37,6 +36,7 @@ defmodule WalEx.Supervisor do
     |> Supervisor.init(strategy: :one_for_one)
   end
 
+  # TODO: EventModules should be dynamic (only if modules exist)
   defp build_module_names(app_name, opts) do
     modules = Keyword.get(opts, :modules, [])
     subscriptions = Keyword.get(opts, :subscriptions)
@@ -74,28 +74,10 @@ defmodule WalEx.Supervisor do
     configs = Keyword.get(opts, :configs)
     app_name = Keyword.get(configs, :name)
 
-    walex_configs = [{WalExConfig, configs: configs}]
-    walex_db_replication_supervisor = [{ReplicationSupervisor, app_name: app_name}]
-    walex_event = process_check(Events, [{Events, []}])
-    destinations = process_check(Destinations, [{Destinations, []}])
-    webhooks = process_check(Webhooks, [{Webhooks, []}])
-    event_relay = process_check(EventRelay, [{EventRelay, []}])
-
-    walex_configs ++
-      walex_db_replication_supervisor ++
-      walex_event ++
-      destinations ++
-      webhooks ++
-      event_relay
-  end
-
-  defp process_check(module, default) do
-    case Process.whereis(module) do
-      nil ->
-        default
-
-      _ ->
-        []
-    end
+    [
+      {WalExConfig, configs: configs},
+      {ReplicationSupervisor, app_name: app_name},
+      {DestinationsSupervisor, configs}
+    ]
   end
 end
