@@ -22,6 +22,18 @@ defmodule WalEx.EventTest do
     modules: [TestApp.TestModule]
   ]
 
+  @dsl_base_configs [
+    name: @app_name,
+    hostname: @hostname,
+    username: @username,
+    password: @password,
+    database: @database,
+    port: 5432,
+    subscriptions: ["user", "todo"],
+    publication: ["events"],
+    modules: [TestApp.DslTestModule]
+  ]
+
   describe "process_all/1" do
     setup do
       {:ok, database_pid} = start_database()
@@ -118,6 +130,29 @@ defmodule WalEx.EventTest do
     end
   end
 
+  describe "dsl" do
+    setup do
+      {:ok, database_pid} = start_database()
+      {:ok, supervisor_pid} = WalExSupervisor.start_link(@dsl_base_configs)
+
+      %{database_pid: database_pid, supervisor_pid: supervisor_pid}
+    end
+
+    test "listening all events", %{database_pid: database_pid} do
+      events_pid = Process.whereis(WalEx.Events)
+      assert is_pid(events_pid)
+
+      capture_log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          update_user(database_pid)
+
+          :timer.sleep(1000)
+        end)
+
+      assert capture_log =~ "event occured"
+    end
+  end
+
   defp update_user(database_pid) do
     update_user = """
       UPDATE \"user\" SET age = 30 WHERE id = 1
@@ -142,4 +177,14 @@ defmodule TestApp.TestModule do
   def process_all(%WalEx.Changes.Transaction{}) do
     raise RuntimeError, "Process error"
   end
+end
+
+defmodule TestApp.DslTestModule do
+  require Logger
+  use WalEx.Event, name: :test_app
+
+  on_event(
+    :all,
+    fn event -> Logger.info("event occured: #{inspect(event, pretty: true)}") end
+  )
 end
