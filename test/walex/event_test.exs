@@ -156,8 +156,14 @@ defmodule WalEx.EventTest do
       %{database_pid: database_pid, supervisor_pid: supervisor_pid}
     end
 
-    test "listening all events", %{database_pid: database_pid} do
-      events_pid = Process.whereis(WalEx.Events)
+    test "listening all events", %{supervisor_pid: supervisor_pid, database_pid: database_pid} do
+      destinations_supervisor_pid = find_worker_pid(supervisor_pid, DestinationsSupervisor)
+
+      assert is_pid(destinations_supervisor_pid)
+
+      events_pid =
+        find_worker_pid(destinations_supervisor_pid, DestinationsEventModules)
+
       assert is_pid(events_pid)
 
       capture_log =
@@ -200,6 +206,7 @@ end
 defmodule TestApp.DslTestModule do
   require Logger
   use WalEx.Event, name: :test_app
+  import WalEx.Event.Dsl
 
   on_event(
     :all,
