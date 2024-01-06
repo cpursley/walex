@@ -28,6 +28,8 @@ defmodule WalEx.Event do
     app_name = Keyword.get(opts, :name)
 
     quote do
+      import WalEx.Event.Dsl
+
       def filter_events(txn) do
         Event.filter_and_cast(unquote(app_name), txn)
       end

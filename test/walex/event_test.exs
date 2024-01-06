@@ -206,7 +206,6 @@ end
 defmodule TestApp.DslTestModule do
   require Logger
   use WalEx.Event, name: :test_app
-  import WalEx.Event.Dsl
 
   on_event(
     :all,
