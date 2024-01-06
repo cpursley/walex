@@ -123,17 +123,14 @@ config :my_app, WalEx,
   publication: "events",
   subscriptions: ["user", "todo"],
   # optional
-  # WalEx assumes your module names match this pattern: MyApp.Events.User, MyApp.Events.ToDo, etc
-  # but you can also specify custom modules like so:
-  # modules: [MyApp.CustomModule, MyApp.OtherCustomModule],
-  # optional
   destinations: [
+    # WalEx assumes your module names match this pattern: MyApp.Events.User, MyApp.Events.ToDo, etc
+    # but you can also specify custom modules like so:
+    # modules: [MyApp.CustomModule, MyApp.OtherCustomModule],
     webhooks: ["https://webhook.site/c2f32b47-33ef-425c-9ed2-f369529a0de8"],
     event_relay_topic: "todos"
   ],
-  # optional
   webhook_signing_secret: "9da89f5f8f4717099c698a17c0d3a1869ee227de06c27b18",
-  # optional
   event_relay: [
     host: "localhost",
     port: "50051",
@@ -223,9 +220,11 @@ where _name_ field was changed):
 ]
 ```
 
-### Elixir DSL
+### Destinations
 
-If your app is named _MyApp_ and you have a subscription called _:user_ (which represents a database table), WalEx assumes you have a module called `MyApp.Events.User` that uses WalEx Event. But you can also define any custom module, just be sure to add it to the _modules_ config.
+#### Event Module
+
+If your app is named _MyApp_ and you have a subscription called _:user_ (which represents a database table), WalEx assumes you have a module called `MyApp.Events.User` that uses WalEx Event. But you can also define any custom module, just be sure to add it to the _modules_ config under _destinations_.
 
 Note that the result of `events` is a list. This is because WalEx returns a _List_ of  _transactions_ for a particular table when there's a change event. Often times this will just contain one result, but it could be many (for example, if you use database triggers to update a column after an insert).
 
@@ -258,7 +257,7 @@ defmodule MyApp.Events.User do
   end)
 ```
 
-#### Filters
+##### Filters
 
 A common scenario is where you want to _"unsubscribe"_ from specific records (for example, temporarily for a migration or data fix). One way to accomplish this is to have a column with a value like `event_subscribe: false`. Then you can ignore specific events by specifying their key and value to *unwatched_records*.
 
@@ -283,7 +282,7 @@ defmodule MyApp.Events.User do
 end
 ```
 
-#### Functions
+##### Functions
 
 You can also provide a list of functions (as atoms) to be applied to each Event (after optional filters are applied). Each function is run as an async Task on each event. The functions must be defined in the current module and take a single _event_ argument. Use with caution!
 
@@ -313,9 +312,7 @@ defmodule MyApp.Events.User do
 end
 ```
 
-### Destinations
-
-You can optionally [configure](#config) WalEx to automatically send events to _destinations_ without needing to know Elixir DSL.
+You can optionally [configure](#config) WalEx to automatically send events to the following destinations without needing to know Elixir:
 
 #### Webhooks
 

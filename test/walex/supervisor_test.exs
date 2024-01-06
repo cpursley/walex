@@ -21,7 +21,7 @@ defmodule WalEx.SupervisorTest do
       assert {:ok, walex_supervisor_pid} = WalExSupervisor.start_link(@base_configs)
       assert is_pid(walex_supervisor_pid)
 
-      assert %{active: 6, workers: 5, supervisors: 1, specs: 6} =
+      assert %{active: 3, specs: 3, supervisors: 2, workers: 1} =
                Supervisor.count_children(walex_supervisor_pid)
 
       replication_supervisor_pid =

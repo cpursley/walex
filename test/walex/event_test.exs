@@ -2,7 +2,11 @@ defmodule WalEx.EventTest do
   use ExUnit.Case, async: false
   import WalEx.Support.TestHelpers
 
+  alias WalEx.Destinations.EventModules, as: DestinationsEventModules
+  alias WalEx.Destinations.Supervisor, as: DestinationsSupervisor
   alias WalEx.Supervisor, as: WalExSupervisor
+  alias WalEx.Replication.Supervisor, as: ReplicationSupervisor
+  alias WalEx.Replication.Publisher, as: ReplicationPublisher
 
   @app_name :test_app
   @hostname "localhost"
@@ -42,8 +46,17 @@ defmodule WalEx.EventTest do
       %{database_pid: database_pid, supervisor_pid: supervisor_pid}
     end
 
-    test "should successfully receive Transaction", %{database_pid: database_pid} do
-      events_pid = Process.whereis(WalEx.Events)
+    test "should successfully receive Transaction", %{
+      database_pid: database_pid,
+      supervisor_pid: supervisor_pid
+    } do
+      destinations_supervisor_pid = find_worker_pid(supervisor_pid, DestinationsSupervisor)
+
+      assert is_pid(destinations_supervisor_pid)
+
+      events_pid =
+        find_worker_pid(destinations_supervisor_pid, DestinationsEventModules)
+
       assert is_pid(events_pid)
 
       update_user(database_pid)
@@ -88,27 +101,31 @@ defmodule WalEx.EventTest do
       database_pid: database_pid,
       supervisor_pid: supervisor_pid
     } do
-      events_pid = Process.whereis(WalEx.Events)
+      destinations_supervisor_pid = find_worker_pid(supervisor_pid, DestinationsSupervisor)
+
+      assert is_pid(destinations_supervisor_pid)
+
+      events_pid = find_worker_pid(destinations_supervisor_pid, DestinationsEventModules)
+
       assert is_pid(events_pid)
 
-      replication_supervisor_pid =
-        find_worker_pid(supervisor_pid, WalEx.Replication.Supervisor)
+      replication_supervisor_pid = find_worker_pid(supervisor_pid, ReplicationSupervisor)
 
       assert is_pid(replication_supervisor_pid)
 
       replication_publisher_pid =
-        find_worker_pid(replication_supervisor_pid, WalEx.Replication.Publisher)
+        find_worker_pid(replication_supervisor_pid, ReplicationPublisher)
 
       assert is_pid(replication_publisher_pid)
 
       update_user(database_pid)
 
       # https://smartlogic.io/blog/test-process-monitoring/
-      process_ref = Process.monitor(events_pid)
+      _process_ref = Process.monitor(events_pid)
 
       assert_receive {
         :DOWN,
-        ^process_ref,
+        _process_ref,
         :process,
         ^events_pid,
         {%RuntimeError{message: "Process error"}, _stacktrace}
@@ -117,13 +134,14 @@ defmodule WalEx.EventTest do
       # Wait for supervisor to restart Events GenServer and Publisher
       :timer.sleep(500)
 
-      new_events_pid = Process.whereis(WalEx.Events)
+      new_events_pid =
+        find_worker_pid(destinations_supervisor_pid, DestinationsEventModules)
 
       assert is_pid(new_events_pid)
       refute events_pid == new_events_pid
 
       new_replication_publisher_pid =
-        find_worker_pid(replication_supervisor_pid, WalEx.Replication.Publisher)
+        find_worker_pid(replication_supervisor_pid, ReplicationPublisher)
 
       assert is_pid(new_replication_publisher_pid)
       refute replication_publisher_pid == new_replication_publisher_pid
