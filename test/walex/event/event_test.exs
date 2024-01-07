@@ -120,7 +120,7 @@ defmodule WalEx.EventTest do
       }
 
       # Wait for supervisor to restart Events GenServer and Publisher
-      :timer.sleep(500)
+      :timer.sleep(1000)
 
       new_events_pid =
         find_worker_pid(destinations_supervisor_pid, DestinationsEventModules)
@@ -134,14 +134,6 @@ defmodule WalEx.EventTest do
       assert is_pid(new_replication_publisher_pid)
       refute replication_publisher_pid == new_replication_publisher_pid
     end
-  end
-
-  defp update_user(database_pid) do
-    update_user = """
-      UPDATE \"user\" SET age = 30 WHERE id = 1
-    """
-
-    Postgrex.query!(database_pid, update_user, [])
   end
 
   defp start_database do
