@@ -46,7 +46,7 @@ defmodule WalEx.Destinations.EventRelay do
   def process_events(changes, app_name) do
     case connect(app_name) do
       {:ok, channel} ->
-        topic = Helpers.get_event_relay_topic(app_name)
+        topic = Config.get_event_relay_topic(app_name)
         events = build_events(changes)
 
         request =

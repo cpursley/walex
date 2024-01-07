@@ -43,6 +43,25 @@ defmodule WalEx.Config do
     |> Keyword.take(keys)
   end
 
+  def get_database(app_name), do: get_configs(app_name, :database)
+
+  def get_destination(app_name, destination) do
+    case get_configs(app_name, :destinations) do
+      destinations when is_list(destinations) and destinations != [] ->
+        destinations
+        |> Keyword.get(destination, nil)
+
+      _ ->
+        nil
+    end
+  end
+
+  def get_event_modules(app_name), do: get_destination(app_name, :modules)
+
+  def get_webhooks(app_name), do: get_destination(app_name, :webhooks)
+
+  def get_event_relay_topic(app_name), do: get_destination(app_name, :event_relay_topic)
+
   def add_config(app_name, key, new_values)
       when is_list(new_values) and key in @allowed_config_values do
     Agent.update(set_agent(app_name), fn config ->

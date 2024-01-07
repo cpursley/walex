@@ -43,7 +43,7 @@ defmodule WalEx.Destinations.Webhooks do
   defp process_events(changes, app_name), do: Enum.map(changes, &process_event(&1, app_name))
 
   defp process_event(change, app_name) do
-    webhooks = Helpers.get_webhooks(app_name)
+    webhooks = Config.get_webhooks(app_name)
     signing_secret = get_signing_secret(app_name)
 
     send_webhooks(webhooks, signing_secret, change)
