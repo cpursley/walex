@@ -11,11 +11,11 @@ defmodule WalEx.ConfigTest do
     password: "password",
     database: "database",
     port: 5432,
+    ssl: false,
+    ssl_opts: [verify: :verify_none],
     subscriptions: ["subscriptions"],
     publication: "publication",
-    modules: [MyApp.CustomModule],
-    ssl: false,
-    ssl_opts: [verify: :verify_none]
+    destinations: [modules: [MyApp.CustomModule]]
   ]
 
   setup_all do
@@ -26,20 +26,17 @@ defmodule WalEx.ConfigTest do
 
   describe "start_link/2" do
     test "should start a process" do
-      {:ok, pid} = Config.start_link(configs: @base_configs)
+      assert {:ok, pid} = Config.start_link(configs: @base_configs)
       assert is_pid(pid)
     end
 
     test "should accept database url as config and split it into the right configs" do
       configs = [
         name: :test_name,
-        url: "postgres://username:password@hostname:5432/database",
-        subscriptions: ["subscriptions"],
-        publication: "publication",
-        modules: ["modules"]
+        url: "postgres://username:password@hostname:5432/database"
       ]
 
-      {:ok, pid} = Config.start_link(configs: configs)
+      assert {:ok, pid} = Config.start_link(configs: configs)
       assert is_pid(pid)
 
       assert [
@@ -51,15 +48,18 @@ defmodule WalEx.ConfigTest do
                ssl: false,
                ssl_opts: [verify: :verify_none]
              ] ==
-               Config.get_configs(:test_name, [
-                 :hostname,
-                 :username,
-                 :password,
-                 :database,
-                 :port,
-                 :ssl,
-                 :ssl_opts
-               ])
+               Config.get_configs(
+                 :test_name,
+                 [
+                   :hostname,
+                   :username,
+                   :password,
+                   :database,
+                   :port,
+                   :ssl,
+                   :ssl_opts
+                 ]
+               )
     end
   end
 
@@ -72,19 +72,18 @@ defmodule WalEx.ConfigTest do
     test "should return all configs" do
       assert [
                name: :test_name,
-               publication: "publication",
-               subscriptions: ["subscriptions"],
-               modules: [MyApp.CustomModule, :"TestName.Events.Subscriptions"],
-               destinations: nil,
-               webhook_signing_secret: nil,
-               event_relay: nil,
                hostname: "hostname",
                username: "username",
                password: "password",
                port: 5432,
                database: "database",
                ssl: false,
-               ssl_opts: [verify: :verify_none]
+               ssl_opts: [verify: :verify_none],
+               subscriptions: ["subscriptions"],
+               publication: "publication",
+               destinations: [modules: [MyApp.CustomModule, :"TestName.Events.Subscriptions"]],
+               webhook_signing_secret: nil,
+               event_relay: nil
              ] == Config.get_configs(:test_name)
     end
   end
@@ -101,12 +100,11 @@ defmodule WalEx.ConfigTest do
 
     test "should return only selected configs when second parameter is a list" do
       assert [
-               modules: [MyApp.CustomModule, :"TestName.Events.Subscriptions"],
                hostname: "hostname",
                ssl: false,
                ssl_opts: [verify: :verify_none]
              ] ==
-               Config.get_configs(:test_name, [:modules, :hostname, :ssl, :ssl_opts])
+               Config.get_configs(:test_name, [:hostname, :ssl, :ssl_opts])
     end
 
     test "should filter configs by process name" do
@@ -115,7 +113,7 @@ defmodule WalEx.ConfigTest do
         |> Keyword.replace(:name, :other_name)
         |> Keyword.replace(:database, "other_database")
 
-      {:ok, pid} = Config.start_link(configs: configs)
+      assert {:ok, pid} = Config.start_link(configs: configs)
       assert is_pid(pid)
 
       assert [

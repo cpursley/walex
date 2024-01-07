@@ -86,23 +86,24 @@ defmodule WalEx.Config do
 
     name = Keyword.get(configs, :name)
     subscriptions = Keyword.get(configs, :subscriptions, [])
-    modules = Keyword.get(configs, :modules, [])
+    destinations = Keyword.get(configs, :destinations, [])
+    modules = Keyword.get(destinations, :modules, [])
+    module_names = build_module_names(name, modules, subscriptions)
 
     [
       name: name,
-      publication: Keyword.get(configs, :publication),
-      subscriptions: subscriptions,
-      modules: build_module_names(name, modules, subscriptions),
-      destinations: Keyword.get(configs, :destinations),
-      webhook_signing_secret: Keyword.get(configs, :webhook_signing_secret),
-      event_relay: Keyword.get(configs, :event_relay),
       hostname: Keyword.get(configs, :hostname, db_configs_from_url[:hostname]),
       username: Keyword.get(configs, :username, db_configs_from_url[:username]),
       password: Keyword.get(configs, :password, db_configs_from_url[:password]),
       port: Keyword.get(configs, :port, db_configs_from_url[:port]),
       database: Keyword.get(configs, :database, db_configs_from_url[:database]),
       ssl: Keyword.get(configs, :ssl, false),
-      ssl_opts: Keyword.get(configs, :ssl_opts, verify: :verify_none)
+      ssl_opts: Keyword.get(configs, :ssl_opts, verify: :verify_none),
+      subscriptions: subscriptions,
+      publication: Keyword.get(configs, :publication),
+      destinations: Keyword.put(destinations, :modules, module_names),
+      webhook_signing_secret: Keyword.get(configs, :webhook_signing_secret),
+      event_relay: Keyword.get(configs, :event_relay)
     ]
   end
 

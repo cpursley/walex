@@ -21,7 +21,7 @@ defmodule WalEx.EventDslTest do
     port: 5432,
     subscriptions: ["user", "todo"],
     publication: ["events"],
-    modules: [TestApp.DslTestModule]
+    destinations: [modules: [TestApp.DslTestModule]]
   ]
 
   describe "on_event/2" do
