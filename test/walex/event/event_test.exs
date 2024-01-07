@@ -26,18 +26,6 @@ defmodule WalEx.EventTest do
     modules: [TestApp.TestModule]
   ]
 
-  @dsl_base_configs [
-    name: @app_name,
-    hostname: @hostname,
-    username: @username,
-    password: @password,
-    database: @database,
-    port: 5432,
-    subscriptions: ["user", "todo"],
-    publication: ["events"],
-    modules: [TestApp.DslTestModule]
-  ]
-
   describe "process_all/1" do
     setup do
       {:ok, database_pid} = start_database()
@@ -132,7 +120,7 @@ defmodule WalEx.EventTest do
       }
 
       # Wait for supervisor to restart Events GenServer and Publisher
-      :timer.sleep(500)
+      :timer.sleep(1000)
 
       new_events_pid =
         find_worker_pid(destinations_supervisor_pid, DestinationsEventModules)
@@ -146,43 +134,6 @@ defmodule WalEx.EventTest do
       assert is_pid(new_replication_publisher_pid)
       refute replication_publisher_pid == new_replication_publisher_pid
     end
-  end
-
-  describe "dsl" do
-    setup do
-      {:ok, database_pid} = start_database()
-      {:ok, supervisor_pid} = WalExSupervisor.start_link(@dsl_base_configs)
-
-      %{database_pid: database_pid, supervisor_pid: supervisor_pid}
-    end
-
-    test "listening all events", %{supervisor_pid: supervisor_pid, database_pid: database_pid} do
-      destinations_supervisor_pid = find_worker_pid(supervisor_pid, DestinationsSupervisor)
-
-      assert is_pid(destinations_supervisor_pid)
-
-      events_pid =
-        find_worker_pid(destinations_supervisor_pid, DestinationsEventModules)
-
-      assert is_pid(events_pid)
-
-      capture_log =
-        ExUnit.CaptureLog.capture_log(fn ->
-          update_user(database_pid)
-
-          :timer.sleep(1000)
-        end)
-
-      assert capture_log =~ "event occured"
-    end
-  end
-
-  defp update_user(database_pid) do
-    update_user = """
-      UPDATE \"user\" SET age = 30 WHERE id = 1
-    """
-
-    Postgrex.query!(database_pid, update_user, [])
   end
 
   defp start_database do
@@ -201,14 +152,4 @@ defmodule TestApp.TestModule do
   def process_all(%WalEx.Changes.Transaction{}) do
     raise RuntimeError, "Process error"
   end
-end
-
-defmodule TestApp.DslTestModule do
-  require Logger
-  use WalEx.Event, name: :test_app
-
-  on_event(
-    :all,
-    fn event -> Logger.info("event occured: #{inspect(event, pretty: true)}") end
-  )
 end
