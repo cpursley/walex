@@ -23,7 +23,7 @@ defmodule WalEx.EventTest do
     port: 5432,
     subscriptions: ["user", "todo"],
     publication: ["events"],
-    modules: [TestApp.TestModule]
+    destinations: [modules: [TestApp.TestModule]]
   ]
 
   describe "process_all/1" do

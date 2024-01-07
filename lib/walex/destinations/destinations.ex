@@ -5,7 +5,7 @@ defmodule WalEx.Destinations do
 
   use GenServer
 
-  alias WalEx.{Destinations, Config, Event, Helpers, TransactionFilter}
+  alias WalEx.{Destinations, Config, Event, TransactionFilter}
   alias Config.Registry
   alias Destinations.{EventModules, EventRelay, Webhooks}
 
@@ -65,7 +65,7 @@ defmodule WalEx.Destinations do
   defp process_event_relay([], _app_name), do: :ok
 
   defp process_event_relay(filtered_events, app_name) do
-    event_relay_topic = Helpers.get_event_relay_topic(app_name)
+    event_relay_topic = Config.get_event_relay_topic(app_name)
 
     if is_binary(event_relay_topic) and event_relay_topic != "" do
       EventRelay.process(filtered_events, app_name)
@@ -75,7 +75,7 @@ defmodule WalEx.Destinations do
   defp process_webhooks([], _app_name), do: :ok
 
   defp process_webhooks(filtered_events, app_name) do
-    webhooks = Helpers.get_webhooks(app_name)
+    webhooks = Config.get_webhooks(app_name)
 
     if is_list(webhooks) and webhooks != [] do
       Webhooks.process(filtered_events, app_name)

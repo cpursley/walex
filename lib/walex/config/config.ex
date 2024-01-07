@@ -43,6 +43,25 @@ defmodule WalEx.Config do
     |> Keyword.take(keys)
   end
 
+  def get_database(app_name), do: get_configs(app_name, :database)
+
+  def get_destination(app_name, destination) do
+    case get_configs(app_name, :destinations) do
+      destinations when is_list(destinations) and destinations != [] ->
+        destinations
+        |> Keyword.get(destination, nil)
+
+      _ ->
+        nil
+    end
+  end
+
+  def get_event_modules(app_name), do: get_destination(app_name, :modules)
+
+  def get_webhooks(app_name), do: get_destination(app_name, :webhooks)
+
+  def get_event_relay_topic(app_name), do: get_destination(app_name, :event_relay_topic)
+
   def add_config(app_name, key, new_values)
       when is_list(new_values) and key in @allowed_config_values do
     Agent.update(set_agent(app_name), fn config ->
@@ -86,23 +105,24 @@ defmodule WalEx.Config do
 
     name = Keyword.get(configs, :name)
     subscriptions = Keyword.get(configs, :subscriptions, [])
-    modules = Keyword.get(configs, :modules, [])
+    destinations = Keyword.get(configs, :destinations, [])
+    modules = Keyword.get(destinations, :modules, [])
+    module_names = build_module_names(name, modules, subscriptions)
 
     [
       name: name,
-      publication: Keyword.get(configs, :publication),
-      subscriptions: subscriptions,
-      modules: build_module_names(name, modules, subscriptions),
-      destinations: Keyword.get(configs, :destinations),
-      webhook_signing_secret: Keyword.get(configs, :webhook_signing_secret),
-      event_relay: Keyword.get(configs, :event_relay),
       hostname: Keyword.get(configs, :hostname, db_configs_from_url[:hostname]),
       username: Keyword.get(configs, :username, db_configs_from_url[:username]),
       password: Keyword.get(configs, :password, db_configs_from_url[:password]),
       port: Keyword.get(configs, :port, db_configs_from_url[:port]),
       database: Keyword.get(configs, :database, db_configs_from_url[:database]),
       ssl: Keyword.get(configs, :ssl, false),
-      ssl_opts: Keyword.get(configs, :ssl_opts, verify: :verify_none)
+      ssl_opts: Keyword.get(configs, :ssl_opts, verify: :verify_none),
+      subscriptions: subscriptions,
+      publication: Keyword.get(configs, :publication),
+      destinations: Keyword.put(destinations, :modules, module_names),
+      webhook_signing_secret: Keyword.get(configs, :webhook_signing_secret),
+      event_relay: Keyword.get(configs, :event_relay)
     ]
   end
 
@@ -112,6 +132,7 @@ defmodule WalEx.Config do
     |> map_subscriptions_to_modules(name)
     |> Enum.concat(modules)
     |> Enum.uniq()
+    |> map_existing_modules()
     |> Enum.sort()
   end
 
@@ -127,7 +148,6 @@ defmodule WalEx.Config do
   def to_module_name(module_name) when is_atom(module_name) or is_binary(module_name) do
     module_name
     |> to_string()
-    |> String.replace("Elixir.", "")
     |> String.split(["_"])
     |> Enum.map_join(&capitalize/1)
   end
@@ -139,6 +159,18 @@ defmodule WalEx.Config do
       String.capitalize(name)
     end
   end
+
+  defp module_exists?(module_name) do
+    case Code.ensure_compiled(module_name) do
+      {:module, _module} ->
+        true
+
+      {:error, _error} ->
+        false
+    end
+  end
+
+  defp map_existing_modules(modules), do: Enum.filter(modules, &module_exists?/1)
 
   defp parse_url(""), do: []
 

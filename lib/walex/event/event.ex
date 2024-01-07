@@ -2,7 +2,6 @@ defmodule WalEx.Event do
   @moduledoc """
   Event DSL and casting
   """
-
   @derive Jason.Encoder
   defstruct([:name, :type, :source, :new_record, :old_record, :changes, :timestamp])
 
@@ -19,7 +18,7 @@ defmodule WalEx.Event do
   require Logger
   import WalEx.TransactionFilter
 
-  alias WalEx.{Changes, Event, Helpers}
+  alias WalEx.{Changes, Config, Event, Helpers}
 
   @doc """
   Macros for processing events
@@ -108,7 +107,7 @@ defmodule WalEx.Event do
     %WalEx.Event.Source{
       name: Helpers.get_source_name(),
       version: Helpers.get_source_version(),
-      db: Helpers.get_database(app_name),
+      db: Config.get_database(app_name),
       schema: schema,
       table: table,
       columns: map_columns(columns)

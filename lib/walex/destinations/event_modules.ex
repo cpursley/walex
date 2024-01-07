@@ -33,7 +33,7 @@ defmodule WalEx.Destinations.EventModules do
   @impl true
   def handle_call({:process, txn, server}, _from, state) do
     server
-    |> WalEx.Config.get_configs([:modules])
+    |> WalEx.Config.get_configs(:destinations)
     |> process_events(txn)
 
     {:reply, :ok, state}
@@ -52,13 +52,7 @@ defmodule WalEx.Destinations.EventModules do
   end
 
   defp process_module(module_name, functions, txn) do
-    case Code.ensure_compiled(module_name) do
-      {:module, module} ->
-        Enum.each(functions, &apply_process_macro(&1, module, txn))
-
-      {:error, _error} ->
-        :ok
-    end
+    Enum.each(functions, &apply_process_macro(&1, module_name, txn))
   end
 
   defp apply_process_macro(function, module, txn) do
