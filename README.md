@@ -8,7 +8,7 @@ WalEx allows you to listen to change events on your Postgres tables then send th
 - Stream database changes to an event service like [EventRelay](https://github.com/eventrelay/eventrelay)
 - Send a user a welcome email after they create a new account
 - Augment an existing Postgres-backed application with business logic
-- Send events to third party services (analytics, CRM, webhooks, etc)
+- Send events to third party services (analytics, CRM, [webhooks](#webhooks))
 - Update index / invalidate cache whenever a record is changed
 
 You can learn more about CDC and what you can do with it here: [Why capture changes?](https://bbhoss.io/posts/announcing-cainophile/#why-capture-changes)
@@ -27,7 +27,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 3.6.0"}
+    {:walex, "~> 3.7.0"}
   ]
 end
 ```
@@ -191,7 +191,7 @@ where _name_ field was changed):
     type: :update,
     source: %WalEx.Event.Source{
       name: "WalEx",
-      version: "3.6.0",
+      version: "3.7.0",
       db: "todos",
       schema: "public",
       table: "user",
