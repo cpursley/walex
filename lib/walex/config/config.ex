@@ -113,6 +113,7 @@ defmodule WalEx.Config do
     |> map_subscriptions_to_modules(name)
     |> Enum.concat(modules)
     |> Enum.uniq()
+    |> map_existing_modules()
     |> Enum.sort()
   end
 
@@ -128,7 +129,6 @@ defmodule WalEx.Config do
   def to_module_name(module_name) when is_atom(module_name) or is_binary(module_name) do
     module_name
     |> to_string()
-    |> String.replace("Elixir.", "")
     |> String.split(["_"])
     |> Enum.map_join(&capitalize/1)
   end
@@ -140,6 +140,18 @@ defmodule WalEx.Config do
       String.capitalize(name)
     end
   end
+
+  defp module_exists?(module_name) do
+    case Code.ensure_compiled(module_name) do
+      {:module, _module} ->
+        true
+
+      {:error, _error} ->
+        false
+    end
+  end
+
+  defp map_existing_modules(modules), do: Enum.filter(modules, &module_exists?/1)
 
   defp parse_url(""), do: []
 
