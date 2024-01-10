@@ -22,6 +22,6 @@ defmodule WalEx.Config.Registry do
   defp set_name(module, app_name), do: {:via, Registry, {@walex_registry, {module, app_name}}}
 
   def get_state(:get_agent, module, app_name) do
-    Agent.get({:via, Registry, {:walex_registry, {module, app_name}}}, & &1)
+    Agent.get({:via, Registry, {@walex_registry, {module, app_name}}}, & &1)
   end
 end

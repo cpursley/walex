@@ -24,6 +24,6 @@ defmodule WalEx.Replication.Supervisor do
       {Server, app_name: app_name}
     ]
 
-    Supervisor.init(children, strategy: :one_for_all)
+    Supervisor.init(children, strategy: :one_for_one, max_restarts: 10)
   end
 end

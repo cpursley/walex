@@ -27,7 +27,7 @@ defmodule WalEx.Destinations.Supervisor do
       |> maybe_webhooks(app_name)
       |> maybe_event_relay(app_name)
 
-    Supervisor.init(children, strategy: :one_for_all)
+    Supervisor.init(children, strategy: :one_for_one, max_restarts: 10)
   end
 
   defp maybe_event_modules(children, app_name) do
