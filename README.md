@@ -1,6 +1,6 @@
 # WalEx
 
-Simple and Reliable Postgres [Change Data Capture
+Simple and reliable Postgres [Change Data Capture
 (CDC)](https://en.wikipedia.org/wiki/Change_data_capture) in Elixir.
 
 WalEx allows you to listen to change events on your Postgres tables then send them on to [destinations](#destinations) or perform callback-like actions with the data via the [DSL](#elixir-dsl). For example:
@@ -318,9 +318,9 @@ You can optionally [configure](#config) WalEx to automatically send events to th
 
 Send subscribed events to one or more webhooks. WalEx supports the [Standard Webhooks](https://www.standardwebhooks.com) spec via the [webhoox](https://github.com/cpursley/webhoox) library (which can also be used to receive webhooks in Elixir).
 
-#### EventRelay (Recommended)
+#### EventRelay
 
-If you need something more durable and flexible than webhooks, check out [EventRelay](https://github.com/eventrelay/eventrelay). If you don't know Elixir and prefer a simple yaml configuration-based approach, you can use [eventsql](https://github.com/eventrelay/eventsql) (WalEx under the hood) to send events to EventRelay.
+If you need something more durable and flexible than webhooks, check out [EventRelay](https://github.com/eventrelay/eventrelay).
 
 In EventRelay, you'll need to create a topic matching what's in the WalEx destinations config. So, if your event_relay_topic is called _todos_ (usually this is the database name), then your topic name in EventRelay should be `todos`. Here's how to do it via grpcurl:
 
