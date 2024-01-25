@@ -8,7 +8,7 @@ defmodule WalEx.Destinations.Supervisor do
   alias Destinations.{EventModules, EventRelay, Webhooks}
 
   def start_link(opts) do
-    app_name = Keyword.get(opts, :app_name)
+    app_name = Keyword.get(opts, :name)
     name = Config.Registry.set_name(:set_supervisor, __MODULE__, app_name)
 
     Supervisor.start_link(__MODULE__, opts, name: name)
