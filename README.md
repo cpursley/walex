@@ -27,7 +27,7 @@ by adding `walex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:walex, "~> 3.7.0"}
+    {:walex, "~> 3.8.0"}
   ]
 end
 ```
@@ -191,7 +191,7 @@ where _name_ field was changed):
     type: :update,
     source: %WalEx.Event.Source{
       name: "WalEx",
-      version: "3.7.0",
+      version: "3.8.0",
       db: "todos",
       schema: "public",
       table: "user",
