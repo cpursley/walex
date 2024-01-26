@@ -31,7 +31,6 @@ defmodule WalEx.MixProject do
     [
       {:postgrex, "~> 0.17.4"},
       {:decimal, "~> 2.1.1"},
-      {:ex_doc, "~> 0.31.0", only: :dev, runtime: false},
       {:jason, "~> 1.4"},
       {:timex, "~> 3.7"},
       {:req, "~> 0.4.8"},
@@ -40,9 +39,10 @@ defmodule WalEx.MixProject do
       # {:eventrelay_client, github: "eventrelay/eventrelay_client_elixir", branch: "main"},
       {:webhoox, "~> 0.3.0"},
 
-      # Test
+      # Dev & Test
+      {:ex_doc, "~> 0.31.1", only: :dev, runtime: false},
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
-      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.7.3", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.10", only: [:dev, :test], runtime: false}
     ]
   end
