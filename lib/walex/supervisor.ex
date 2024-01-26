@@ -19,7 +19,7 @@ defmodule WalEx.Supervisor do
 
     name = WalExRegistry.set_name(:set_supervisor, __MODULE__, app_name)
 
-    Supervisor.start_link(__MODULE__, configs: supervisor_opts, name: name)
+    Supervisor.start_link(__MODULE__, supervisor_opts, name: name)
   end
 
   @impl true
@@ -63,8 +63,7 @@ defmodule WalEx.Supervisor do
     Enum.filter(other_configs, &(not Keyword.has_key?(opts, &1)))
   end
 
-  defp set_children(opts) do
-    configs = Keyword.get(opts, :configs)
+  defp set_children(configs) do
     app_name = Keyword.get(configs, :name)
 
     [
