@@ -42,14 +42,13 @@ defmodule WalEx.DatabaseTest do
       assert [@replication_slot | _replication_slots] = pg_replication_slots(database_pid)
     end
 
-    test "should re-initiate after database connection termination" do
+    test "should re-initiate after forcing database process termination" do
       assert {:ok, supervisor_pid} = TestSupervisor.start_link(@base_configs)
       database_pid = get_database_pid(supervisor_pid)
 
       assert is_pid(database_pid)
       assert [@replication_slot | _replication_slots] = pg_replication_slots(database_pid)
 
-      # forcefully killed database pid
       assert Process.exit(database_pid, :kill)
              |> tap_debug("Forcefully killed database connection: ")
 
@@ -60,8 +59,12 @@ defmodule WalEx.DatabaseTest do
       assert is_pid(new_database_pid)
       refute database_pid == new_database_pid
       assert_update_user(new_database_pid)
+    end
 
-      # terminate database via application supervisor
+    test "should re-initiate after database connection restarted by supervisor" do
+      assert {:ok, supervisor_pid} = TestSupervisor.start_link(@base_configs)
+      database_pid = get_database_pid(supervisor_pid)
+
       Supervisor.terminate_child(supervisor_pid, DBConnection.ConnectionPool)
       |> tap_debug("Supervisor terminated database connection: ")
 
@@ -69,7 +72,7 @@ defmodule WalEx.DatabaseTest do
 
       wait_for_restart()
 
-      refute Process.info(new_database_pid)
+      refute Process.info(database_pid)
 
       Supervisor.restart_child(supervisor_pid, DBConnection.ConnectionPool)
       |> tap_debug("Supervisor restarted database connection: ")
@@ -84,21 +87,22 @@ defmodule WalEx.DatabaseTest do
 
       assert [@replication_slot | _replication_slots] =
                pg_replication_slots(restarted_database_pid)
+    end
 
-      # close database connection
+    test "should re-initiate after database connection terminated" do
+      assert {:ok, supervisor_pid} = TestSupervisor.start_link(@base_configs)
+      database_pid = get_database_pid(supervisor_pid)
+
       assert {:error,
               %DBConnection.ConnectionError{
                 message: "tcp recv: closed",
                 severity: :error,
                 reason: :error
-              }} == terminate_database_connection(restarted_database_pid, @username)
+              }} == terminate_database_connection(database_pid, @username)
 
-      assert is_pid(restarted_database_pid)
-      refute database_pid == restarted_database_pid
-      assert_update_user(restarted_database_pid)
+      assert_update_user(database_pid)
 
-      assert [@replication_slot | _replication_slots] =
-               pg_replication_slots(restarted_database_pid)
+      assert [@replication_slot | _replication_slots] = pg_replication_slots(database_pid)
     end
   end
 
