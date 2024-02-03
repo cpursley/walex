@@ -26,7 +26,7 @@ defmodule WalEx.EventDslTest do
 
   describe "on_event/2" do
     setup do
-      {:ok, database_pid} = start_database()
+      {:ok, database_pid} = start_database(@dsl_base_configs)
       {:ok, supervisor_pid} = WalExSupervisor.start_link(@dsl_base_configs)
 
       %{database_pid: database_pid, supervisor_pid: supervisor_pid}
@@ -36,12 +36,12 @@ defmodule WalEx.EventDslTest do
       supervisor_pid: supervisor_pid,
       database_pid: database_pid
     } do
-      destinations_supervisor_pid = find_worker_pid(supervisor_pid, DestinationsSupervisor)
+      destinations_supervisor_pid = find_child_pid(supervisor_pid, DestinationsSupervisor)
 
       assert is_pid(destinations_supervisor_pid)
 
       events_pid =
-        find_worker_pid(destinations_supervisor_pid, DestinationsEventModules)
+        find_child_pid(destinations_supervisor_pid, DestinationsEventModules)
 
       assert is_pid(events_pid)
 
@@ -59,7 +59,7 @@ defmodule WalEx.EventDslTest do
 
   describe "on_update/4" do
     setup do
-      {:ok, database_pid} = start_database()
+      {:ok, database_pid} = start_database(@dsl_base_configs)
       {:ok, supervisor_pid} = WalExSupervisor.start_link(@dsl_base_configs)
 
       %{database_pid: database_pid, supervisor_pid: supervisor_pid}
@@ -69,12 +69,12 @@ defmodule WalEx.EventDslTest do
       supervisor_pid: supervisor_pid,
       database_pid: database_pid
     } do
-      destinations_supervisor_pid = find_worker_pid(supervisor_pid, DestinationsSupervisor)
+      destinations_supervisor_pid = find_child_pid(supervisor_pid, DestinationsSupervisor)
 
       assert is_pid(destinations_supervisor_pid)
 
       events_pid =
-        find_worker_pid(destinations_supervisor_pid, DestinationsEventModules)
+        find_child_pid(destinations_supervisor_pid, DestinationsEventModules)
 
       assert is_pid(events_pid)
 
@@ -88,15 +88,6 @@ defmodule WalEx.EventDslTest do
       assert capture_log =~ "on_update event occurred"
       assert capture_log =~ "%WalEx.Event"
     end
-  end
-
-  defp start_database do
-    Postgrex.start_link(
-      hostname: @hostname,
-      username: @username,
-      password: @password,
-      database: @database
-    )
   end
 end
 
