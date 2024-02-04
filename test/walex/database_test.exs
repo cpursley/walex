@@ -123,7 +123,6 @@ defmodule WalEx.DatabaseTest do
     end
   end
 
-  # @linux_path "/var/lib/postgresql"
   @linux_path "/usr/lib/postgresql"
   @mac_homebrew_path "/usr/local/Cellar/postgresql"
   @mac_app_path "/Applications/Postgres.app/Contents/Versions"
@@ -179,24 +178,27 @@ defmodule WalEx.DatabaseTest do
   end
 
   defp pg_data_directory(version) do
-    case pg_installation_type() do
-      :linux ->
-        "/var/lib/postgresql/#{version}/main/"
+    postgres_data_directory =
+      case pg_installation_type() do
+        :linux ->
+          "/var/lib/postgresql/#{version}/main/"
 
-      :mac_homebrew ->
-        "/usr/local/var/postgres-#{version}"
+        :mac_homebrew ->
+          "/usr/local/var/postgres-#{version}"
 
-      :mac_app ->
-        System.user_home!() <> "/Library/Application\ Support/Postgres/var-#{version}"
+        :mac_app ->
+          System.user_home!() <> "/Library/Application\ Support/Postgres/var-#{version}"
+      end
+
+    if File.exists?(postgres_data_directory) do
+      postgres_data_directory
+    else
+      raise "pg data directory not found. Make sure PostgreSQL is installed correctly."
     end
   end
 
   defp pg_bin_path(postgres_path, version) do
     postgres_bin_path = Path.join([postgres_path, version, "bin", "pg_ctl"])
-    # temp
-    IO.inspect(postgres_bin_path: postgres_bin_path)
-    maybe_linux_path = "/usr/lib/postgresql/#{version}/bin/pg_ctl"
-    IO.inspect(maybe_linux_path: File.exists?(maybe_linux_path))
 
     if File.exists?(postgres_bin_path) do
       postgres_bin_path
@@ -211,42 +213,56 @@ defmodule WalEx.DatabaseTest do
     postgres_bin_path = pg_bin_path(postgres_path, version)
     data_directory = pg_data_directory(version)
 
-    pg_isready?()
     pg_stop(postgres_bin_path, data_directory)
     Logger.debug("Waiting after pg_stop")
     :timer.sleep(2000)
+    pg_isready?()
 
-    Task.async(fn -> pg_start(postgres_bin_path, data_directory) end)
+    pg_start(postgres_bin_path, data_directory)
     Logger.debug("Waiting after pg_start")
-    :timer.sleep(4000)
+    :timer.sleep(2000)
     pg_isready?()
 
     :ok
   end
 
   defp pg_stop(postgres_bin_path, data_directory) do
-    Logger.debug("Stopping PostgreSQL.")
+    Logger.debug("PostgreSQL stopping.")
 
-    Rambo.run(postgres_bin_path, [
-      "stop",
-      "-m",
-      "immediate",
-      "-D",
-      "#{data_directory}"
-    ])
+    case Rambo.run(postgres_bin_path, [
+           "stop",
+           "-m",
+           "immediate",
+           "-D",
+           "#{data_directory}"
+         ]) do
+      {:ok,
+       %Rambo{
+         status: 0,
+         out: "waiting for server to shut down.... done\nserver stopped\n",
+         err: ""
+       }} ->
+        Logger.debug("PostgreSQL stopped.")
+
+      error ->
+        Logger.debug("PostgreSQL not stopped: " <> inspect(error))
+    end
   end
 
   defp pg_start(postgres_bin_path, data_directory) do
-    Logger.debug("Starting PostgreSQL.")
+    Logger.debug("PostgreSQL starting.")
 
-    Rambo.run(
-      postgres_bin_path,
-      [
-        "start",
-        "-D",
-        "#{data_directory}"
-      ]
-    )
+    # No case match here - for some reason starting pg hangs...
+    Task.async(fn ->
+      Rambo.run(
+        postgres_bin_path,
+        [
+          "start",
+          "-D",
+          "#{data_directory}"
+        ]
+      )
+    end)
   end
 
   defp pg_isready? do
