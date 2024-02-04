@@ -177,16 +177,16 @@ defmodule WalEx.DatabaseTest do
     end
   end
 
-  defp pg_data_directory do
+  defp pg_data_directory(version) do
     case pg_installation_type() do
       :linux ->
-        "/var/lib/postgresql"
+        "/var/lib/postgresql/#{version}/main/"
 
       :mac_homebrew ->
-        "/usr/local/var/postgres"
+        "/usr/local/var/postgres-#{version}"
 
       :mac_app ->
-        System.user_home!() <> "/Library/Application\ Support/Postgres/var"
+        System.user_home!() <> "/Library/Application\ Support/Postgres/var-#{version}"
     end
   end
 
@@ -204,14 +204,14 @@ defmodule WalEx.DatabaseTest do
     postgres_path = pg_ctl_path()
     version = pg_version(postgres_path)
     postgres_bin_path = pg_bin_path(postgres_path, version)
-    data_directory = pg_data_directory()
+    data_directory = pg_data_directory(version)
 
     pg_isready?()
-    pg_stop(postgres_bin_path, data_directory, version)
+    pg_stop(postgres_bin_path, data_directory)
     Logger.debug("Waiting after pg_stop")
     :timer.sleep(2000)
 
-    Task.async(fn -> pg_start(postgres_bin_path, data_directory, version) end)
+    Task.async(fn -> pg_start(postgres_bin_path, data_directory) end)
     Logger.debug("Waiting after pg_start")
     :timer.sleep(4000)
     pg_isready?()
@@ -219,7 +219,7 @@ defmodule WalEx.DatabaseTest do
     :ok
   end
 
-  defp pg_stop(postgres_bin_path, data_directory, version) do
+  defp pg_stop(postgres_bin_path, data_directory) do
     Logger.debug("Stopping PostgreSQL.")
 
     Rambo.run(postgres_bin_path, [
@@ -227,11 +227,11 @@ defmodule WalEx.DatabaseTest do
       "-m",
       "immediate",
       "-D",
-      "#{data_directory}-#{version}"
+      "#{data_directory}"
     ])
   end
 
-  defp pg_start(postgres_bin_path, data_directory, version) do
+  defp pg_start(postgres_bin_path, data_directory) do
     Logger.debug("Starting PostgreSQL.")
 
     Rambo.run(
@@ -239,7 +239,7 @@ defmodule WalEx.DatabaseTest do
       [
         "start",
         "-D",
-        "#{data_directory}-#{version}"
+        "#{data_directory}"
       ]
     )
   end
