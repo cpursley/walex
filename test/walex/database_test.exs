@@ -70,8 +70,6 @@ defmodule WalEx.DatabaseTest do
 
       assert :undefined == get_database_pid(supervisor_pid)
 
-      wait_for_restart()
-
       refute Process.info(database_pid)
 
       Supervisor.restart_child(supervisor_pid, DBConnection.ConnectionPool)
@@ -103,6 +101,177 @@ defmodule WalEx.DatabaseTest do
       assert_update_user(database_pid)
 
       assert [@replication_slot | _replication_slots] = pg_replication_slots(database_pid)
+    end
+
+    test "should re-initiate after database restart" do
+      assert {:ok, supervisor_pid} = TestSupervisor.start_link(@base_configs)
+      database_pid = get_database_pid(supervisor_pid)
+
+      assert is_pid(database_pid)
+      assert [@replication_slot | _replication_slots] = pg_replication_slots(database_pid)
+
+      assert Process.exit(database_pid, :kill)
+             |> tap_debug("Forcefully killed database connection: ")
+
+      assert :ok == pg_restart()
+
+      new_database_pid = get_database_pid(supervisor_pid)
+
+      assert is_pid(new_database_pid)
+      refute database_pid == new_database_pid
+      assert_update_user(new_database_pid)
+    end
+  end
+
+  @linux_path "/var/lib/postgresql"
+  @mac_homebrew_path "/usr/local/Cellar/postgresql"
+  @mac_app_path "/Applications/Postgres.app/Contents/Versions"
+
+  def pg_restart do
+    case :os.type() do
+      {:unix, :darwin} ->
+        Logger.debug("MacOS detected.")
+
+        restart_postgres()
+
+      {:unix, :linux} ->
+        Logger.debug("Linux detected.")
+
+        restart_postgres()
+
+      other ->
+        Logger.debug("Unsupported operating system: #{inspect(other)}")
+        :ok
+    end
+  end
+
+  defp pg_installation_type do
+    cond do
+      File.exists?(@linux_path) ->
+        :linux
+
+      File.exists?(@mac_homebrew_path) ->
+        :mac_homebrew
+
+      File.exists?(@mac_app_path) ->
+        :mac_app
+    end
+  end
+
+  defp pg_ctl_path do
+    case pg_installation_type() do
+      :linux ->
+        Logger.debug("PostgreSQL installed via Linux.")
+        @linux_path
+
+      :mac_homebrew ->
+        Logger.debug("PostgreSQL installed via homebrew.")
+        @mac_homebrew_path
+
+      :mac_app ->
+        Logger.debug("PostgreSQL installed via Postgres.app.")
+        @mac_app_path
+
+      true ->
+        raise "PostgreSQL not installed via Postgres.app or homebrew."
+    end
+  end
+
+  defp pg_data_directory do
+    case pg_installation_type() do
+      :linux ->
+        "/var/lib/postgresql"
+
+      :mac_homebrew ->
+        "/usr/local/var/postgres"
+
+      :mac_app ->
+        System.user_home!() <> "/Library/Application\ Support/Postgres/var"
+    end
+  end
+
+  defp pg_bin_path(postgres_path, version) do
+    postgres_bin_path = Path.join([postgres_path, version, "bin", "pg_ctl"])
+
+    if File.exists?(postgres_bin_path) do
+      postgres_bin_path
+    else
+      raise "pg_ctl binary not found. Make sure PostgreSQL is installed correctly."
+    end
+  end
+
+  defp restart_postgres do
+    postgres_path = pg_ctl_path()
+    version = pg_version(postgres_path)
+    postgres_bin_path = pg_bin_path(postgres_path, version)
+    data_directory = pg_data_directory()
+
+    pg_isready?()
+    pg_stop(postgres_bin_path, data_directory, version)
+    Logger.debug("Waiting after pg_stop")
+    :timer.sleep(2000)
+
+    Task.async(fn -> pg_start(postgres_bin_path, data_directory, version) end)
+    Logger.debug("Waiting after pg_start")
+    :timer.sleep(4000)
+    pg_isready?()
+
+    :ok
+  end
+
+  defp pg_stop(postgres_bin_path, data_directory, version) do
+    Logger.debug("Stopping PostgreSQL.")
+
+    Rambo.run(postgres_bin_path, [
+      "stop",
+      "-m",
+      "immediate",
+      "-D",
+      "#{data_directory}-#{version}"
+    ])
+  end
+
+  defp pg_start(postgres_bin_path, data_directory, version) do
+    Logger.debug("Starting PostgreSQL.")
+
+    Rambo.run(
+      postgres_bin_path,
+      [
+        "start",
+        "-D",
+        "#{data_directory}-#{version}"
+      ]
+    )
+  end
+
+  defp pg_isready? do
+    case Rambo.run("pg_isready", ["-h", "localhost", "-p", "5432"]) do
+      {:ok, %Rambo{status: 0, out: "localhost:5432 - accepting connections\n", err: ""}} ->
+        Logger.debug("PostgreSQL is ready.")
+        true
+
+      {:error, %Rambo{status: 2, out: "localhost:5432 - no response\n", err: ""}} ->
+        Logger.debug("PostgreSQL is not ready.")
+        false
+
+      error ->
+        Logger.debug("PostgreSQL is not ready: " <> inspect(error))
+        false
+    end
+  end
+
+  defp pg_version(postgres_path) do
+    case Rambo.run("ls", [postgres_path]) do
+      {:ok, %Rambo{status: 0, out: versions, err: ""}} when is_binary(versions) ->
+        versions
+        |> String.split("\n")
+        |> Enum.filter(&String.match?(&1, ~r/^\d+$/))
+        |> Enum.map(&String.to_integer/1)
+        |> Enum.max()
+        |> Integer.to_string()
+
+      _error ->
+        raise "PostgreSQL version not found."
     end
   end
 

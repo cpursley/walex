@@ -15,7 +15,8 @@ defmodule WalEx.MixProject do
       name: "WalEx",
       source_url: "https://github.com/cpursley/walex",
       test_coverage: [tool: ExCoveralls],
-      elixirc_paths: elixirc_paths(Mix.env())
+      elixirc_paths: elixirc_paths(Mix.env()),
+      compilers: compilers()
     ]
   end
 
@@ -43,7 +44,8 @@ defmodule WalEx.MixProject do
       {:ex_doc, "~> 0.31.1", only: :dev, runtime: false},
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7.3", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.10", only: [:dev, :test], runtime: false}
+      {:excoveralls, "~> 0.10", only: [:dev, :test], runtime: false},
+      {:rambo, "~> 0.3.4", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -75,4 +77,12 @@ defmodule WalEx.MixProject do
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  defp compilers do
+    unless Mix.env() == :prod do
+      Mix.compilers() ++ [:rambo]
+    else
+      Mix.compilers()
+    end
+  end
 end
