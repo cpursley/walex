@@ -213,15 +213,31 @@ defmodule WalEx.DatabaseTest do
     postgres_bin_path = pg_bin_path(postgres_path, version)
     data_directory = pg_data_directory(version)
 
-    pg_stop(postgres_bin_path, data_directory)
-    Logger.debug("Waiting after pg_stop")
-    :timer.sleep(2000)
-    pg_isready?()
+    case pg_stop(postgres_bin_path, data_directory) do
+      {:ok,
+       %Rambo{
+         status: 0,
+         out: "waiting for server to shut down.... done\nserver stopped\n",
+         err: ""
+       }} ->
+        unless pg_isready?() do
+          pg_start(postgres_bin_path, data_directory)
+          Logger.debug("Waiting after pg_start")
+          :timer.sleep(4000)
+          pg_isready?()
+        end
 
-    pg_start(postgres_bin_path, data_directory)
-    Logger.debug("Waiting after pg_start")
-    :timer.sleep(2000)
-    pg_isready?()
+      {:error,
+       %Rambo{
+         status: 1,
+         out: "",
+         err: error
+       }} ->
+        Logger.debug("PostgreSQL not stopped: " <> inspect(error))
+
+      _ ->
+        Logger.debug("PostgreSQL not stopped.")
+    end
 
     :ok
   end
@@ -229,30 +245,19 @@ defmodule WalEx.DatabaseTest do
   defp pg_stop(postgres_bin_path, data_directory) do
     Logger.debug("PostgreSQL stopping.")
 
-    case Rambo.run(postgres_bin_path, [
-           "stop",
-           "-m",
-           "immediate",
-           "-D",
-           "#{data_directory}"
-         ]) do
-      {:ok,
-       %Rambo{
-         status: 0,
-         out: "waiting for server to shut down.... done\nserver stopped\n",
-         err: ""
-       }} ->
-        Logger.debug("PostgreSQL stopped.")
-
-      error ->
-        Logger.debug("PostgreSQL not stopped: " <> inspect(error))
-    end
+    Rambo.run(postgres_bin_path, [
+      "stop",
+      "-m",
+      "immediate",
+      "-D",
+      "#{data_directory}"
+    ])
   end
 
   defp pg_start(postgres_bin_path, data_directory) do
     Logger.debug("PostgreSQL starting.")
 
-    # No case match here - for some reason starting pg hangs...
+    # For some reason starting pg hangs so we run in async as not to block...
     Task.async(fn ->
       Rambo.run(
         postgres_bin_path,
@@ -268,15 +273,15 @@ defmodule WalEx.DatabaseTest do
   defp pg_isready? do
     case Rambo.run("pg_isready", ["-h", "localhost", "-p", "5432"]) do
       {:ok, %Rambo{status: 0, out: "localhost:5432 - accepting connections\n", err: ""}} ->
-        Logger.debug("PostgreSQL is ready.")
+        Logger.debug("PostgreSQL is running.")
         true
 
       {:error, %Rambo{status: 2, out: "localhost:5432 - no response\n", err: ""}} ->
-        Logger.debug("PostgreSQL is not ready.")
+        Logger.debug("PostgreSQL is not running.")
         false
 
       error ->
-        Logger.debug("PostgreSQL is not ready: " <> inspect(error))
+        Logger.debug("PostgreSQL is not running: " <> inspect(error))
         false
     end
   end
