@@ -1,13 +1,11 @@
 defmodule Mix.Tasks.SetUpTestDatabase do
   @moduledoc false
   use Mix.Task
-  import WalEx.Support.TestHelpers
 
   alias Mix.Tasks.Helpers
 
   @test_database "todos_test"
   @base_configs [
-    name: @test_database,
     hostname: "localhost",
     username: "postgres",
     password: "postgres",
@@ -22,7 +20,7 @@ defmodule Mix.Tasks.SetUpTestDatabase do
 
   defp setup_test_database do
     Helpers.create_database(@test_database)
-    {:ok, pid} = start_database(@base_configs)
+    {:ok, pid} = Postgrex.start_link(@base_configs)
 
     create_database_logic(pid)
     create_database_tables(pid)

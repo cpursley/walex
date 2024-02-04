@@ -62,8 +62,6 @@ defmodule WalEx.Support.TestHelpers do
     Enum.map(rows, fn row -> Enum.zip(columns, row) |> Map.new() end)
   end
 
-  defp map_rows_to_columns(_result), do: []
-
   def pg_replication_slots(database_pid) do
     pg_replication_slots_query =
       "SELECT slot_name, slot_type, active FROM \"pg_replication_slots\";"
