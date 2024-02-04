@@ -123,7 +123,8 @@ defmodule WalEx.DatabaseTest do
     end
   end
 
-  @linux_path "/var/lib/postgresql"
+  # @linux_path "/var/lib/postgresql"
+  @linux_path "/usr/lib/postgresql"
   @mac_homebrew_path "/usr/local/Cellar/postgresql"
   @mac_app_path "/Applications/Postgres.app/Contents/Versions"
 
