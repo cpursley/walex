@@ -192,6 +192,10 @@ defmodule WalEx.DatabaseTest do
 
   defp pg_bin_path(postgres_path, version) do
     postgres_bin_path = Path.join([postgres_path, version, "bin", "pg_ctl"])
+    # temp
+    IO.inspect(postgres_bin_path: postgres_bin_path)
+    maybe_linux_path = "/usr/lib/postgresql/#{version}/bin/pg_ctl"
+    IO.inspect(maybe_linux_path: File.exists?(maybe_linux_path))
 
     if File.exists?(postgres_bin_path) do
       postgres_bin_path
