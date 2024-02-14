@@ -55,7 +55,7 @@ defmodule WalEx.MixProject do
     [
       files: ~w(lib test .formatter.exs mix.exs README* LICENSE*),
       maintainers: ["Chase Pursley"],
-      licenses: ["Apache-2.0"],
+      licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/cpursley/walex"}
     ]
   end
