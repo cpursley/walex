@@ -57,13 +57,14 @@ defmodule WalEx.MixProject do
     [
       files: ~w(lib test .formatter.exs mix.exs README* LICENSE*),
       maintainers: ["Chase Pursley"],
-      licenses: ["Apache-2.0"],
+      licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/cpursley/walex"}
     ]
   end
 
   defp aliases() do
     [
+      "walex.reset": ["walex.drop", "walex.setup"],
       # Run tests and check coverage
       test: ["test", "coveralls"],
       # Run to check the quality of your code

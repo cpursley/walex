@@ -44,7 +44,7 @@ jobs:
       run: docker-compose -f docker-compose.dbs.yml up -d
 
     - name: Set up test data
-      run: mix set_up_test_database
+      run: mix walex.setup
 
     - name: Check warnings
       run: |

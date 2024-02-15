@@ -1,8 +1,9 @@
-defmodule Mix.Tasks.SetUpTestDatabase do
-  @moduledoc false
+defmodule Mix.Tasks.Walex.Setup do
+  @moduledoc """
+  Creates, migrates and seeds the database
+  """
   use Mix.Task
-
-  alias Mix.Tasks.Helpers
+  alias Mix.Tasks.Walex.Helpers
 
   @test_database "todos_test"
   @base_configs [
