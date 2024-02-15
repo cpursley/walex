@@ -260,7 +260,7 @@ defmodule WalEx.DatabaseTest do
       :mac_apple_silicon_homebrew ->
         Rambo.run("brew", ["services", "stop", "postgresql"])
 
-      true ->
+      _ ->
         Rambo.run(postgres_bin_path, [
           "stop",
           "-m",
@@ -278,7 +278,7 @@ defmodule WalEx.DatabaseTest do
       :mac_apple_silicon_homebrew ->
         Rambo.run("brew", ["services", "start", "postgresql"])
 
-      true ->
+      _ ->
         # For some reason starting pg hangs so we run in async as not to block...
         Task.async(fn ->
           Rambo.run(
