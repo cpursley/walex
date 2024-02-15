@@ -334,11 +334,15 @@ More destinations coming. Pull requests welcome!
 
 ## Test
 
-You'll need a local Postgres setup with:
+You'll need a local Postgres instance running
 
-hostname: "localhost", username: "postgres", password: "postgres"
+```bash
+MIX_ENV=test mix walex.setup
+MIX_ENV=test mix test
+```
 
-Create the "todos_test" database: `mix set_up_test_database`
-Run tests: `mix test`
-Check quality: `mix quality`
-Delete test database: `mix tear_down_test_database`
+## Help?
+
+I would love to have your help! I do ask that if you do find a bug, please add a test to your PR that shows the bug and how it was fixed.
+
+Thanks!
