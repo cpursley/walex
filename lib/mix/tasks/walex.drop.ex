@@ -2,9 +2,7 @@ defmodule Mix.Tasks.Walex.Drop do
   @moduledoc """
   Drops the database
   """
-
   use Mix.Task
-
   alias Mix.Tasks.Walex.Helpers
 
   @test_database "todos_test"

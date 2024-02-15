@@ -25,17 +25,17 @@ defmodule WalEx.SupervisorTest do
                Supervisor.count_children(walex_supervisor_pid)
 
       replication_supervisor_pid =
-        find_worker_pid(walex_supervisor_pid, Replication.Supervisor)
+        find_child_pid(walex_supervisor_pid, Replication.Supervisor)
 
       assert is_pid(replication_supervisor_pid)
 
       replication_publisher_pid =
-        find_worker_pid(replication_supervisor_pid, Replication.Publisher)
+        find_child_pid(replication_supervisor_pid, Replication.Publisher)
 
       assert is_pid(replication_publisher_pid)
 
       replication_server_pid =
-        find_worker_pid(replication_supervisor_pid, Replication.Server)
+        find_child_pid(replication_supervisor_pid, Replication.Server)
 
       assert is_pid(replication_server_pid)
     end

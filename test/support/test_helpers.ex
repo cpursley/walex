@@ -1,5 +1,11 @@
 defmodule WalEx.Support.TestHelpers do
-  def find_worker_pid(supervisor_pid, child_module) do
+  require Logger
+
+  def tap_debug(to_tap, label) do
+    to_tap |> tap(&Logger.debug(label <> inspect(&1)))
+  end
+
+  def find_child_pid(supervisor_pid, child_module) do
     supervisor_pid
     |> Supervisor.which_children()
     |> find_pid(child_module)
@@ -8,6 +14,59 @@ defmodule WalEx.Support.TestHelpers do
   defp find_pid(children, module_name) do
     {_, pid, _, _} = Enum.find(children, fn {module, _, _, _} -> module == module_name end)
     pid
+  end
+
+  def get_database_pid(supervisor_pid) do
+    find_child_pid(supervisor_pid, DBConnection.ConnectionPool)
+  end
+
+  def start_database(configs) do
+    case Postgrex.start_link(configs) do
+      {:ok, conn} ->
+        Logger.info("Database is running.")
+
+        {:ok, conn}
+
+      {:error, {:already_started, conn}} ->
+        Logger.info("Database is already running.")
+
+        {:ok, conn}
+
+      {:error, reason} ->
+        Logger.error("Error connecting to the database. Reason: #{inspect(reason)}")
+
+        {:error, reason}
+    end
+  end
+
+  def terminate_database_connection(database_pid, username) do
+    query =
+      "SELECT pg_terminate_backend(pg_backend_pid()) FROM pg_stat_activity WHERE usename = $1"
+
+    Postgrex.query(database_pid, query, [username])
+  end
+
+  def wait_for_restart do
+    Logger.debug("waiting")
+    :timer.sleep(3000)
+    Logger.debug("done waiting")
+  end
+
+  def query(pid, query) do
+    pid
+    |> Postgrex.query!(query, [])
+    |> map_rows_to_columns()
+  end
+
+  defp map_rows_to_columns(%Postgrex.Result{columns: columns, rows: rows}) do
+    Enum.map(rows, fn row -> Enum.zip(columns, row) |> Map.new() end)
+  end
+
+  def pg_replication_slots(database_pid) do
+    pg_replication_slots_query =
+      "SELECT slot_name, slot_type, active FROM \"pg_replication_slots\";"
+
+    query(database_pid, pg_replication_slots_query)
   end
 
   def update_user(database_pid) do

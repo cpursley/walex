@@ -2,12 +2,16 @@ defmodule Mix.Tasks.Walex.Setup do
   @moduledoc """
   Creates, migrates and seeds the database
   """
-
   use Mix.Task
-
   alias Mix.Tasks.Walex.Helpers
 
   @test_database "todos_test"
+  @base_configs [
+    hostname: "localhost",
+    username: "postgres",
+    password: "postgres",
+    database: @test_database
+  ]
 
   @shortdoc "Set up test database and tables"
   def run(_) do
@@ -17,14 +21,7 @@ defmodule Mix.Tasks.Walex.Setup do
 
   defp setup_test_database do
     Helpers.create_database(@test_database)
-
-    {:ok, pid} =
-      Postgrex.start_link(
-        hostname: "localhost",
-        username: "postgres",
-        password: "postgres",
-        database: @test_database
-      )
+    {:ok, pid} = Postgrex.start_link(@base_configs)
 
     create_database_logic(pid)
     create_database_tables(pid)

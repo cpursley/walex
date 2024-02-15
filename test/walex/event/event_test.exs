@@ -28,7 +28,7 @@ defmodule WalEx.EventTest do
 
   describe "process_all/1" do
     setup do
-      {:ok, database_pid} = start_database()
+      {:ok, database_pid} = start_database(@base_configs)
       {:ok, supervisor_pid} = WalExSupervisor.start_link(@base_configs)
 
       %{database_pid: database_pid, supervisor_pid: supervisor_pid}
@@ -38,12 +38,12 @@ defmodule WalEx.EventTest do
       database_pid: database_pid,
       supervisor_pid: supervisor_pid
     } do
-      destinations_supervisor_pid = find_worker_pid(supervisor_pid, DestinationsSupervisor)
+      destinations_supervisor_pid = find_child_pid(supervisor_pid, DestinationsSupervisor)
 
       assert is_pid(destinations_supervisor_pid)
 
       events_pid =
-        find_worker_pid(destinations_supervisor_pid, DestinationsEventModules)
+        find_child_pid(destinations_supervisor_pid, DestinationsEventModules)
 
       assert is_pid(events_pid)
 
@@ -89,20 +89,20 @@ defmodule WalEx.EventTest do
       database_pid: database_pid,
       supervisor_pid: supervisor_pid
     } do
-      destinations_supervisor_pid = find_worker_pid(supervisor_pid, DestinationsSupervisor)
+      destinations_supervisor_pid = find_child_pid(supervisor_pid, DestinationsSupervisor)
 
       assert is_pid(destinations_supervisor_pid)
 
-      events_pid = find_worker_pid(destinations_supervisor_pid, DestinationsEventModules)
+      events_pid = find_child_pid(destinations_supervisor_pid, DestinationsEventModules)
 
       assert is_pid(events_pid)
 
-      replication_supervisor_pid = find_worker_pid(supervisor_pid, ReplicationSupervisor)
+      replication_supervisor_pid = find_child_pid(supervisor_pid, ReplicationSupervisor)
 
       assert is_pid(replication_supervisor_pid)
 
       replication_publisher_pid =
-        find_worker_pid(replication_supervisor_pid, ReplicationPublisher)
+        find_child_pid(replication_supervisor_pid, ReplicationPublisher)
 
       assert is_pid(replication_publisher_pid)
 
@@ -123,26 +123,17 @@ defmodule WalEx.EventTest do
       :timer.sleep(1000)
 
       new_events_pid =
-        find_worker_pid(destinations_supervisor_pid, DestinationsEventModules)
+        find_child_pid(destinations_supervisor_pid, DestinationsEventModules)
 
       assert is_pid(new_events_pid)
       refute events_pid == new_events_pid
 
       new_replication_publisher_pid =
-        find_worker_pid(replication_supervisor_pid, ReplicationPublisher)
+        find_child_pid(replication_supervisor_pid, ReplicationPublisher)
 
       assert is_pid(new_replication_publisher_pid)
       refute replication_publisher_pid == new_replication_publisher_pid
     end
-  end
-
-  defp start_database do
-    Postgrex.start_link(
-      hostname: @hostname,
-      username: @username,
-      password: @password,
-      database: @database
-    )
   end
 end
 
