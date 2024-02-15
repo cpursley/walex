@@ -62,6 +62,7 @@ defmodule WalEx.MixProject do
 
   defp aliases() do
     [
+      "walex.reset": ["walex.drop", "walex.setup"],
       # Run tests and check coverage
       test: ["test", "coveralls"],
       # Run to check the quality of your code
