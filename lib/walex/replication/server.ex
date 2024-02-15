@@ -11,9 +11,13 @@ defmodule WalEx.Replication.Server do
   alias WalEx.Decoder
   alias WalEx.Replication.Publisher
 
+  require Logger
+
   def start_link(opts) do
     app_name = Keyword.get(opts, :app_name)
     opts = set_pgx_replication_conn_opts(app_name)
+
+    Logger.info("Starting WalEx Replication Server for #{app_name}")
 
     Postgrex.ReplicationConnection.start_link(__MODULE__, [app_name: app_name], opts)
   end
@@ -43,6 +47,8 @@ defmodule WalEx.Replication.Server do
 
     query = "CREATE_REPLICATION_SLOT #{temp_slot} TEMPORARY LOGICAL pgoutput NOEXPORT_SNAPSHOT;"
 
+    Logger.info("Creating replication slot: #{temp_slot}")
+
     {:query, query, %{state | step: :create_slot}}
   end
 
@@ -58,7 +64,16 @@ defmodule WalEx.Replication.Server do
     query =
       "START_REPLICATION SLOT #{slot_name} LOGICAL 0/0 (proto_version '1', publication_names '#{publication}')"
 
+    Logger.info("Starting replication slot: #{slot_name}, publication: #{publication}")
+
     {:stream, query, [], %{state | step: :streaming}}
+  end
+
+  @impl true
+  def handle_disconnect(state) do
+    Logger.info("Disconnected from replication server, state: #{inspect(state, pretty: true)}")
+
+    {:noreply, state}
   end
 
   @impl true

@@ -8,10 +8,16 @@ defmodule WalEx.Supervisor do
   alias WalEx.Replication.Supervisor, as: ReplicationSupervisor
   alias WalExConfig.Registry, as: WalExRegistry
 
+  require Logger
+
   def start_link(opts) do
     app_name = Keyword.get(opts, :name)
     module_names = build_module_names(app_name, opts)
     supervisor_opts = Keyword.put(opts, :modules, module_names)
+
+    Logger.info(
+      "Starting WalEx Supervisor for #{app_name}, with opts: #{inspect(supervisor_opts, pretty: true)}"
+    )
 
     validate_opts(supervisor_opts)
 

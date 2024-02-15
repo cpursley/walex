@@ -5,12 +5,18 @@ defmodule WalEx.Config.Registry do
 
   @walex_registry :walex_registry
 
+  require Logger
+
   def start_registry do
+    Logger.info("Starting Registry")
+
     case Process.whereis(@walex_registry) do
       nil ->
+        Logger.info("No registry found, starting new one")
         Registry.start_link(keys: :unique, name: @walex_registry)
 
       pid ->
+        Logger.info("Registry already running with pid: #{inspect(pid)}")
         {:ok, pid}
     end
   end
