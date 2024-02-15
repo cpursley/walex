@@ -125,6 +125,7 @@ defmodule WalEx.DatabaseTest do
 
   @linux_path "/usr/lib/postgresql"
   @mac_homebrew_path "/usr/local/Cellar/postgresql"
+  @mac_apple_silicon_homebrew_path "/opt/homebrew/Cellar/postgresql"
   @mac_app_path "/Applications/Postgres.app/Contents/Versions"
 
   def pg_restart do
@@ -153,6 +154,9 @@ defmodule WalEx.DatabaseTest do
       File.exists?(@mac_homebrew_path) ->
         :mac_homebrew
 
+      File.exists?(@mac_apple_silicon_homebrew_path) ->
+        :mac_apple_silicon_homebrew
+
       File.exists?(@mac_app_path) ->
         :mac_app
     end
@@ -167,6 +171,10 @@ defmodule WalEx.DatabaseTest do
       :mac_homebrew ->
         Logger.debug("PostgreSQL installed via homebrew.")
         @mac_homebrew_path
+
+      :mac_apple_silicon_homebrew ->
+        Logger.debug("PostgreSQL installed via apple silicon homebrew.")
+        @mac_apple_silicon_homebrew_path
 
       :mac_app ->
         Logger.debug("PostgreSQL installed via Postgres.app.")
@@ -185,6 +193,9 @@ defmodule WalEx.DatabaseTest do
 
         :mac_homebrew ->
           "/usr/local/var/postgres-#{version}"
+
+        :mac_apple_silicon_homebrew ->
+          "/opt/homebrew/var/postgresql"
 
         :mac_app ->
           System.user_home!() <> "/Library/Application\ Support/Postgres/var-#{version}"
@@ -217,7 +228,7 @@ defmodule WalEx.DatabaseTest do
       {:ok,
        %Rambo{
          status: 0,
-         out: "waiting for server to shut down.... done\nserver stopped\n",
+         out: _message,
          err: ""
        }} ->
         unless pg_isready?() do
@@ -245,29 +256,41 @@ defmodule WalEx.DatabaseTest do
   defp pg_stop(postgres_bin_path, data_directory) do
     Logger.debug("PostgreSQL stopping.")
 
-    Rambo.run(postgres_bin_path, [
-      "stop",
-      "-m",
-      "immediate",
-      "-D",
-      "#{data_directory}"
-    ])
+    case pg_installation_type() do
+      :mac_apple_silicon_homebrew ->
+        Rambo.run("brew", ["services", "stop", "postgresql"])
+
+      true ->
+        Rambo.run(postgres_bin_path, [
+          "stop",
+          "-m",
+          "immediate",
+          "-D",
+          "#{data_directory}"
+        ])
+    end
   end
 
   defp pg_start(postgres_bin_path, data_directory) do
     Logger.debug("PostgreSQL starting.")
 
-    # For some reason starting pg hangs so we run in async as not to block...
-    Task.async(fn ->
-      Rambo.run(
-        postgres_bin_path,
-        [
-          "start",
-          "-D",
-          "#{data_directory}"
-        ]
-      )
-    end)
+    case pg_installation_type() do
+      :mac_apple_silicon_homebrew ->
+        Rambo.run("brew", ["services", "start", "postgresql"])
+
+      true ->
+        # For some reason starting pg hangs so we run in async as not to block...
+        Task.async(fn ->
+          Rambo.run(
+            postgres_bin_path,
+            [
+              "start",
+              "-D",
+              "#{data_directory}"
+            ]
+          )
+        end)
+    end
   end
 
   defp pg_isready? do
@@ -291,10 +314,8 @@ defmodule WalEx.DatabaseTest do
       {:ok, %Rambo{status: 0, out: versions, err: ""}} when is_binary(versions) ->
         versions
         |> String.split("\n")
-        |> Enum.filter(&String.match?(&1, ~r/^\d+$/))
-        |> Enum.map(&String.to_integer/1)
+        |> Enum.filter(&String.match?(&1, ~r/^[0-9._]+$/))
         |> Enum.max()
-        |> Integer.to_string()
 
       _error ->
         raise "PostgreSQL version not found."
