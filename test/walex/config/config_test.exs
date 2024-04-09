@@ -19,6 +19,7 @@ defmodule WalEx.ConfigTest do
     port: 5432,
     ssl: false,
     ssl_opts: [verify: :verify_none],
+    socket_options: [],
     subscriptions: ["subscriptions"],
     publication: "publication",
     destinations: [modules: [MyApp.CustomModule]]
