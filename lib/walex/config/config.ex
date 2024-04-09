@@ -117,6 +117,7 @@ defmodule WalEx.Config do
       database: Keyword.get(configs, :database, db_configs_from_url[:database]),
       ssl: Keyword.get(configs, :ssl, false),
       ssl_opts: Keyword.get(configs, :ssl_opts, verify: :verify_none),
+      socket_options: Keyword.get(configs, :socket_options, []),
       subscriptions: subscriptions,
       publication: Keyword.get(configs, :publication),
       destinations: Keyword.put(destinations, :modules, module_names),
