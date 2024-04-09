@@ -13,7 +13,7 @@ defmodule WalEx.Replication.Server do
 
   def start_link(opts) do
     app_name = Keyword.get(opts, :app_name)
-    opts = set_pgx_replication_conn_opts(app_name) |> IO.inspect
+    opts = set_pgx_replication_conn_opts(app_name)
 
     Postgrex.ReplicationConnection.start_link(__MODULE__, [app_name: app_name], opts)
   end
