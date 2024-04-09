@@ -2,7 +2,6 @@ defmodule WalEx.Config do
   @moduledoc """
   Configuration
   """
-
   use Agent
 
   alias WalEx.Config.Registry, as: WalExRegistry
