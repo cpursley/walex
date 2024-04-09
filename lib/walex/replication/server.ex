@@ -13,13 +13,13 @@ defmodule WalEx.Replication.Server do
 
   def start_link(opts) do
     app_name = Keyword.get(opts, :app_name)
-    opts = set_pgx_replication_conn_opts(app_name)
+    opts = set_pgx_replication_conn_opts(app_name) |> IO.inspect
 
     Postgrex.ReplicationConnection.start_link(__MODULE__, [app_name: app_name], opts)
   end
 
   defp set_pgx_replication_conn_opts(app_name) do
-    database_configs_keys = [:hostname, :username, :password, :port, :database, :ssl, :ssl_opts]
+    database_configs_keys = [:hostname, :username, :password, :port, :database, :ssl, :ssl_opts, :socket_options]
     extra_opts = [auto_reconnect: true]
     database_configs = WalEx.Config.get_configs(app_name, database_configs_keys)
 
