@@ -5,9 +5,13 @@ defmodule WalEx.Replication.Supervisor do
 
   alias WalEx.Replication.{Publisher, Server}
 
+  require Logger
+
   def start_link(opts) do
     app_name = Keyword.get(opts, :app_name)
     name = WalEx.Config.Registry.set_name(:set_supervisor, __MODULE__, app_name)
+
+    Logger.info("Starting WalEx Replication Supervisor for #{app_name}")
 
     Supervisor.start_link(__MODULE__, opts, name: name)
   end
