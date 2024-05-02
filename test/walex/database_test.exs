@@ -129,6 +129,34 @@ defmodule WalEx.DatabaseTest do
   @mac_app_path "/Applications/Postgres.app/Contents/Versions"
 
   def pg_restart do
+    if uses_docker_compose() do
+      Logger.debug("Restarting docker postgres.")
+      pg_restart(:docker)
+    else
+      Logger.debug("Restarting system postgres.")
+      pg_restart(:system)
+    end
+  end
+
+  def uses_docker_compose do
+    case(System.shell("docker compose -f docker-compose.dbs.yml ps db")) do
+      {_, 0} -> true
+      _ -> false
+    end
+  end
+
+  def pg_restart(:docker) do
+    case(System.shell("docker compose -f docker-compose.dbs.yml restart db")) do
+      {_, 0} ->
+        :ok
+
+      {output, _} ->
+        Logger.error("Error restarting PostgreSQL via docker-compose: #{inspect(output)}")
+        raise "Error restarting PostgreSQL via docker-compose."
+    end
+  end
+
+  def pg_restart(:system) do
     case :os.type() do
       {:unix, :darwin} ->
         Logger.debug("MacOS detected.")
