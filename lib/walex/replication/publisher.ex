@@ -116,7 +116,8 @@ defmodule WalEx.Replication.Publisher do
           table: name,
           columns: columns,
           record: data,
-          commit_timestamp: commit_timestamp
+          commit_timestamp: commit_timestamp,
+          lsn: lsn
         }
 
         updated_state = %State{
@@ -158,7 +159,8 @@ defmodule WalEx.Replication.Publisher do
           columns: columns,
           old_record: old_data,
           record: data,
-          commit_timestamp: commit_timestamp
+          commit_timestamp: commit_timestamp,
+          lsn: lsn
         }
 
         updated_state = %State{
@@ -198,7 +200,8 @@ defmodule WalEx.Replication.Publisher do
           table: name,
           columns: columns,
           old_record: data,
-          commit_timestamp: commit_timestamp
+          commit_timestamp: commit_timestamp,
+          lsn: lsn
         }
 
         updated_state = %State{

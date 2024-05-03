@@ -9,7 +9,7 @@ defmodule WalEx.Changes do
   defmodule(Transaction, do: defstruct([:changes, :commit_timestamp]))
 
   defmodule(NewRecord,
-    do: defstruct([:type, :record, :schema, :table, :columns, :commit_timestamp])
+    do: defstruct([:type, :record, :schema, :table, :columns, :commit_timestamp, :lsn])
   )
 
   defmodule(UpdatedRecord,
@@ -21,12 +21,13 @@ defmodule WalEx.Changes do
         :schema,
         :table,
         :columns,
-        :commit_timestamp
+        :commit_timestamp,
+        :lsn
       ])
   )
 
   defmodule(DeletedRecord,
-    do: defstruct([:type, :old_record, :schema, :table, :columns, :commit_timestamp])
+    do: defstruct([:type, :old_record, :schema, :table, :columns, :commit_timestamp, :lsn])
   )
 
   defmodule(TruncatedRelation, do: defstruct([:type, :schema, :table, :commit_timestamp]))

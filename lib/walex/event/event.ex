@@ -3,7 +3,7 @@ defmodule WalEx.Event do
   Event DSL and casting
   """
   @derive Jason.Encoder
-  defstruct([:name, :type, :source, :new_record, :old_record, :changes, :timestamp])
+  defstruct([:name, :type, :source, :new_record, :old_record, :changes, :timestamp, :lsn])
 
   @type t :: %WalEx.Event{
           name: atom(),
@@ -12,7 +12,8 @@ defmodule WalEx.Event do
           new_record: map() | nil,
           old_record: map() | nil,
           changes: map() | nil,
-          timestamp: DateTime.t()
+          timestamp: DateTime.t(),
+          lsn: {integer(), integer()}
         }
 
   require Logger
@@ -46,7 +47,8 @@ defmodule WalEx.Event do
           table: table,
           columns: columns,
           record: record,
-          commit_timestamp: timestamp
+          commit_timestamp: timestamp,
+          lsn: lsn
         },
         app_name
       ) do
@@ -55,7 +57,8 @@ defmodule WalEx.Event do
       type: :insert,
       source: cast_source(app_name, schema, table, columns),
       new_record: record,
-      timestamp: timestamp
+      timestamp: timestamp,
+      lsn: lsn
     }
   end
 
@@ -67,7 +70,8 @@ defmodule WalEx.Event do
           columns: columns,
           record: record,
           old_record: old_record,
-          commit_timestamp: timestamp
+          commit_timestamp: timestamp,
+          lsn: lsn
         },
         app_name
       ) do
@@ -77,7 +81,8 @@ defmodule WalEx.Event do
       source: cast_source(app_name, schema, table, columns),
       new_record: record,
       changes: map_changes(old_record, record),
-      timestamp: timestamp
+      timestamp: timestamp,
+      lsn: lsn
     }
   end
 
@@ -88,7 +93,8 @@ defmodule WalEx.Event do
           table: table,
           columns: columns,
           old_record: old_record,
-          commit_timestamp: timestamp
+          commit_timestamp: timestamp,
+          lsn: lsn
         },
         app_name
       ) do
@@ -97,7 +103,8 @@ defmodule WalEx.Event do
       type: :delete,
       source: cast_source(app_name, schema, table, columns),
       old_record: old_record,
-      timestamp: timestamp
+      timestamp: timestamp,
+      lsn: lsn
     }
   end
 
@@ -158,5 +165,12 @@ defmodule WalEx.Event do
     txn
     |> filter_changes(table, type, app_name)
     |> cast_events(app_name)
+  end
+
+  @spec lsn_to_string({integer(), integer()}) :: String.t()
+  def lsn_to_string({high, low}) do
+    low = Integer.to_string(low, 16)
+    high = Integer.to_string(high, 16)
+    "#{high}/#{low}"
   end
 end
