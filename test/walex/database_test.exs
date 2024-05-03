@@ -36,6 +36,16 @@ defmodule WalEx.DatabaseTest do
       assert [%{"wal_level" => "logical"}] == query(pid, "SHOW wal_level;")
     end
 
+    test "error early if publication doesn't exists" do
+      Process.flag(:trap_exit, true)
+      config = Keyword.put(@base_configs, :publication, "non_existent_publication")
+
+      {_pid, ref} =
+        spawn_monitor(fn -> WalExSupervisor.start_link(config) end)
+
+      assert_receive {:DOWN, ^ref, _, _, {:shutdown, _}}
+    end
+
     test "should start replication slot", %{database_pid: database_pid} do
       assert {:ok, replication_pid} = WalExSupervisor.start_link(@base_configs)
       assert is_pid(replication_pid)
