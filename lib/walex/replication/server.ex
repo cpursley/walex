@@ -63,8 +63,19 @@ defmodule WalEx.Replication.Server do
 
   @impl true
   def handle_connect(state) do
+    query = QueryBuilder.publication_exists(state)
+    {:query, query, %{state | step: :publication_exists}}
+  end
+
+  @impl true
+  def handle_result([%Postgrex.Result{num_rows: 1}], state = %{step: :publication_exists}) do
     query = QueryBuilder.create_temporary_slot(state)
     {:query, query, %{state | step: :create_slot}}
+  end
+
+  @impl true
+  def handle_result(results, %{step: :publication_exists}) do
+    raise "Publication does not exist. #{inspect(results)}"
   end
 
   @impl true
