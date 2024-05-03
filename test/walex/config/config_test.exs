@@ -50,8 +50,8 @@ defmodule WalEx.ConfigTest do
                hostname: @hostname,
                username: @username,
                password: @password,
-               port: 5432,
                database: @database,
+               port: 5432,
                ssl: false,
                ssl_opts: [verify: :verify_none]
              ] ==
@@ -130,7 +130,7 @@ defmodule WalEx.ConfigTest do
                ssl: false,
                ssl_opts: [verify: :verify_none]
              ] ==
-               Config.get_configs(@app_name, [:database, :name, :ssl, :ssl_opts])
+               Config.get_configs(@app_name, [:name, :database, :ssl, :ssl_opts])
 
       assert [
                name: :other_name,
@@ -138,7 +138,7 @@ defmodule WalEx.ConfigTest do
                ssl: false,
                ssl_opts: [verify: :verify_none]
              ] ==
-               Config.get_configs(:other_name, [:database, :name, :ssl, :ssl_opts])
+               Config.get_configs(:other_name, [:name, :database, :ssl, :ssl_opts])
     end
   end
 

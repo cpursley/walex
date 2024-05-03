@@ -38,8 +38,11 @@ defmodule WalEx.Config do
   end
 
   def get_configs(app_name, keys) when is_list(keys) and keys != [] do
+    order_map = keys |> Enum.with_index() |> Map.new()
+
     WalExRegistry.get_state(:get_agent, __MODULE__, app_name)
     |> Keyword.take(keys)
+    |> Enum.sort_by(fn {k, _} -> Map.get(order_map, k) end)
   end
 
   def get_database(app_name), do: get_configs(app_name, :database)
