@@ -91,7 +91,8 @@ defmodule WalEx.ConfigTest do
                publication: "publication",
                destinations: [modules: [MyApp.CustomModule]],
                webhook_signing_secret: nil,
-               event_relay: nil
+               event_relay: nil,
+               slot_name: "my_app_walex"
              ] == Config.get_configs(@app_name)
     end
   end

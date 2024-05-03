@@ -39,21 +39,25 @@ defmodule WalEx.Replication.Server do
 
   @impl true
   def handle_connect(state) do
+    slot_name =
+      WalEx.Config.get_configs(state.app_name, :slot_name)
+
     query =
-      "CREATE_REPLICATION_SLOT #{slot_name(state.app_name)} TEMPORARY LOGICAL pgoutput NOEXPORT_SNAPSHOT;"
+      "CREATE_REPLICATION_SLOT #{slot_name} TEMPORARY LOGICAL pgoutput NOEXPORT_SNAPSHOT;"
 
     {:query, query, %{state | step: :create_slot}}
   end
 
   @impl true
   def handle_result([%Postgrex.Result{} | _results], state = %{step: :create_slot}) do
-    publication =
-      state.app_name
-      |> WalEx.Config.get_configs([:publication])
-      |> Keyword.get(:publication)
+    [slot_name: slot_name, publication: publication] =
+      WalEx.Config.get_configs(state.app_name, [
+        :slot_name,
+        :publication
+      ])
 
     query =
-      "START_REPLICATION SLOT #{slot_name(state.app_name)} LOGICAL 0/0 (proto_version '1', publication_names '#{publication}')"
+      "START_REPLICATION SLOT #{slot_name} LOGICAL 0/0 (proto_version '1', publication_names '#{publication}')"
 
     {:stream, query, [], %{state | step: :streaming}}
   end
@@ -80,6 +84,4 @@ defmodule WalEx.Replication.Server do
 
   @epoch DateTime.to_unix(~U[2000-01-01 00:00:00Z], :microsecond)
   defp current_time, do: System.os_time(:microsecond) - @epoch
-
-  defp slot_name(app_name), do: to_string(app_name) <> "_walex"
 end

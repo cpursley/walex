@@ -6,7 +6,7 @@ defmodule WalEx.Config do
 
   alias WalEx.Config.Registry, as: WalExRegistry
 
-  @allowed_config_value ~w(database hostname name password port publication username webhook_signing_secret)a
+  @allowed_config_value ~w(database hostname name password port publication username webhook_signing_secret slot_name)a
   @allowed_config_values ~w(destinations event_relay modules subscriptions)a
 
   def start_link(opts) do
@@ -125,7 +125,8 @@ defmodule WalEx.Config do
       publication: Keyword.get(configs, :publication),
       destinations: Keyword.put(destinations, :modules, module_names),
       webhook_signing_secret: Keyword.get(configs, :webhook_signing_secret),
-      event_relay: Keyword.get(configs, :event_relay)
+      event_relay: Keyword.get(configs, :event_relay),
+      slot_name: Keyword.get(configs, :slot_name) |> parse_slot_name(name)
     ]
   end
 
@@ -194,6 +195,9 @@ defmodule WalEx.Config do
         not is_nil(v),
         do: {k, if(is_binary(v), do: URI.decode(v), else: v)}
   end
+
+  defp parse_slot_name(nil, app_name), do: to_string(app_name) <> "_walex"
+  defp parse_slot_name(slot_name, _), do: slot_name
 
   defp set_url_opts(username, password, database, info) do
     url_opts = [
