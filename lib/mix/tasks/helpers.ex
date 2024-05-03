@@ -1,4 +1,11 @@
 defmodule Mix.Tasks.Walex.Helpers do
+  @config %{
+    hostname: "localhost",
+    username: "postgres",
+    password: "postgres",
+    port: 5432
+  }
+
   @moduledoc false
   def create_database(database_name) do
     "-c \"CREATE DATABASE #{database_name};\""
@@ -17,9 +24,16 @@ defmodule Mix.Tasks.Walex.Helpers do
   end
 
   def database_cmd(cmd) do
-    db_cmd = "psql -U postgres " <> cmd
+    db_cmd = "psql " <> cmd
 
-    case System.shell(db_cmd) do
+    env = [
+      {"PGHOST", @config.hostname},
+      {"PGUSER", @config.username},
+      {"PGPASSWORD", @config.password},
+      {"PGPORT", Integer.to_string(@config.port)}
+    ]
+
+    case System.shell(db_cmd, env: env) do
       {output, 0} ->
         output
 
