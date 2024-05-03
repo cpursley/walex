@@ -42,6 +42,18 @@ defmodule WalEx.DatabaseTest do
       assert [@replication_slot | _replication_slots] = pg_replication_slots(database_pid)
     end
 
+    test "user-defined slot_name", %{database_pid: database_pid} do
+      slot_name = "userdefined"
+
+      config = Keyword.put(@base_configs, :slot_name, slot_name)
+
+      assert {:ok, replication_pid} = WalExSupervisor.start_link(config)
+
+      assert is_pid(replication_pid)
+      assert [slot | _replication_slots] = pg_replication_slots(database_pid)
+      assert Map.fetch!(slot, "slot_name") == slot_name
+    end
+
     test "should re-initiate after forcing database process termination" do
       assert {:ok, supervisor_pid} = TestSupervisor.start_link(@base_configs)
       database_pid = get_database_pid(supervisor_pid)

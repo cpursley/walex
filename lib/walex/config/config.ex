@@ -6,7 +6,7 @@ defmodule WalEx.Config do
 
   alias WalEx.Config.Registry, as: WalExRegistry
 
-  @allowed_config_value ~w(database hostname name password port publication username webhook_signing_secret)a
+  @allowed_config_value ~w(database hostname name password port publication username webhook_signing_secret slot_name)a
   @allowed_config_values ~w(destinations event_relay modules subscriptions)a
 
   def start_link(opts) do
@@ -38,8 +38,11 @@ defmodule WalEx.Config do
   end
 
   def get_configs(app_name, keys) when is_list(keys) and keys != [] do
+    order_map = keys |> Enum.with_index() |> Map.new()
+
     WalExRegistry.get_state(:get_agent, __MODULE__, app_name)
     |> Keyword.take(keys)
+    |> Enum.sort_by(fn {k, _} -> Map.get(order_map, k) end)
   end
 
   def get_database(app_name), do: get_configs(app_name, :database)
@@ -122,7 +125,8 @@ defmodule WalEx.Config do
       publication: Keyword.get(configs, :publication),
       destinations: Keyword.put(destinations, :modules, module_names),
       webhook_signing_secret: Keyword.get(configs, :webhook_signing_secret),
-      event_relay: Keyword.get(configs, :event_relay)
+      event_relay: Keyword.get(configs, :event_relay),
+      slot_name: Keyword.get(configs, :slot_name) |> parse_slot_name(name)
     ]
   end
 
@@ -191,6 +195,9 @@ defmodule WalEx.Config do
         not is_nil(v),
         do: {k, if(is_binary(v), do: URI.decode(v), else: v)}
   end
+
+  defp parse_slot_name(nil, app_name), do: to_string(app_name) <> "_walex"
+  defp parse_slot_name(slot_name, _), do: slot_name
 
   defp set_url_opts(username, password, database, info) do
     url_opts = [
