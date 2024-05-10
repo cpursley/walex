@@ -5,9 +5,11 @@ defmodule WalEx.Destinations do
 
   use GenServer
 
+  alias WalEx.Replication.Progress
   alias WalEx.{Destinations, Config, Event, TransactionFilter}
   alias Config.Registry
   alias Destinations.{EventModules, EventRelay, Webhooks}
+  alias WalEx.Changes.Transaction
 
   def start_link(opts) do
     name =
@@ -46,7 +48,7 @@ defmodule WalEx.Destinations do
     |> Event.cast_events(app_name)
   end
 
-  defp process_destinations(txn, app_name) do
+  defp process_destinations(%Transaction{lsn: lsn} = txn, app_name) do
     # TODO: EventModules should be dynamic (only if modules exist)
     EventModules.process(txn, app_name)
 
@@ -60,6 +62,8 @@ defmodule WalEx.Destinations do
     if Config.has_config?(destinations, :event_relay_topic) do
       process_event_relay(filtered_events, app_name)
     end
+
+    Progress.done(app_name, lsn)
   end
 
   defp process_event_relay([], _app_name), do: :ok

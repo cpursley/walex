@@ -4,6 +4,7 @@ defmodule WalEx.Replication.Publisher do
   """
   use GenServer
 
+  alias WalEx.Replication.Progress
   alias WalEx.{Changes, Config, Destinations, Types}
   alias WalEx.Decoder.Messages
 
@@ -19,11 +20,10 @@ defmodule WalEx.Replication.Publisher do
   defstruct [:relations]
 
   def start_link(opts) do
-    name =
-      opts
-      |> Keyword.get(:app_name)
-      |> registry_name
-
+    app_name = Keyword.get(opts, :app_name)
+    # If the publisher crashes, reset the progress in the restart
+    Progress.reset(app_name)
+    name = registry_name(app_name)
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
@@ -46,9 +46,14 @@ defmodule WalEx.Replication.Publisher do
 
   @impl true
   def handle_cast(
-        %{message: %Messages.Begin{final_lsn: final_lsn, commit_timestamp: commit_timestamp}},
+        %{
+          message: %Messages.Begin{final_lsn: final_lsn, commit_timestamp: commit_timestamp},
+          app_name: app_name
+        },
         state
       ) do
+    Progress.begin(app_name, final_lsn)
+
     updated_state = %State{
       state
       | transaction: {
