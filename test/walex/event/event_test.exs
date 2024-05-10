@@ -78,7 +78,8 @@ defmodule WalEx.EventTest do
                  commit_timestamp: _updated_record_commit_timestamp
                }
              ],
-             commit_timestamp: _transaction_commit_timestamp
+             commit_timestamp: _transaction_commit_timestamp,
+             lsn: _lsn
            },
            :test_app
          }}

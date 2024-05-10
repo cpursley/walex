@@ -53,7 +53,7 @@ defmodule WalEx.Replication.Publisher do
       state
       | transaction: {
           final_lsn,
-          %Changes.Transaction{changes: [], commit_timestamp: commit_timestamp}
+          %Changes.Transaction{changes: [], commit_timestamp: commit_timestamp, lsn: final_lsn}
         }
     }
 

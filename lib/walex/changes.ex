@@ -6,7 +6,7 @@ require Protocol
 defmodule WalEx.Changes do
   @moduledoc false
 
-  defmodule(Transaction, do: defstruct([:changes, :commit_timestamp]))
+  defmodule(Transaction, do: defstruct([:changes, :commit_timestamp, :lsn]))
 
   defmodule(NewRecord,
     do: defstruct([:type, :record, :schema, :table, :columns, :commit_timestamp, :lsn])
