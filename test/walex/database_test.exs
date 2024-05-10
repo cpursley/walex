@@ -1,6 +1,7 @@
 defmodule WalEx.DatabaseTest do
   use ExUnit.Case, async: false
   import WalEx.Support.TestHelpers
+  alias WalEx.Replication.Progress
   alias WalEx.Supervisor, as: WalExSupervisor
 
   require Logger
@@ -9,9 +10,10 @@ defmodule WalEx.DatabaseTest do
   @username "postgres"
   @password "postgres"
   @database "todos_test"
+  @app_name :todos
 
   @base_configs [
-    name: :todos,
+    name: @app_name,
     hostname: @hostname,
     username: @username,
     password: @password,
@@ -195,6 +197,43 @@ defmodule WalEx.DatabaseTest do
       )
 
       assert [^durable_slot] = pg_replication_slots(database_pid)
+    end
+
+    test "wal_end in keep-alive is server's wal_end+1 when no transaction are in progress" do
+      TestSupervisor.start_link(@base_configs)
+      Progress.start_link(app_name: @app_name)
+
+      server_wal_end = 6846
+      clock = 42
+      keep_alive_request = <<?k, server_wal_end::64, clock::64, 1>>
+      state = %{app_name: @app_name}
+
+      assert {:noreply, [reply], ^state} =
+               WalEx.Replication.Server.handle_data(keep_alive_request, state)
+
+      <<?r, wal_end::64, wal_end::64, wal_end::64, _clock::64, 0>> = reply
+      assert wal_end == server_wal_end + 1
+    end
+
+    test "wal_end in keep-alive reply matches last in progress transaction" do
+      TestSupervisor.start_link(@base_configs)
+      Progress.start_link(app_name: @app_name)
+
+      not_finished = 123
+      server_wal_end = 568
+      clock = 42
+      keep_alive_request = <<?k, server_wal_end::64, clock::64, 1>>
+      state = %{app_name: @app_name}
+
+      Progress.begin(@app_name, {0, not_finished})
+
+      assert {:noreply, [reply], ^state} =
+               WalEx.Replication.Server.handle_data(keep_alive_request, state)
+
+      <<?r, wal_end::64, wal_end::64, wal_end::64, _clock::64, 0>> = reply
+      assert wal_end == not_finished
+
+      Progress.done(@app_name, {0, not_finished})
     end
   end
 

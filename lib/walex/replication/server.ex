@@ -7,6 +7,7 @@ defmodule WalEx.Replication.Server do
   """
   use Postgrex.ReplicationConnection
 
+  alias WalEx.Replication.Progress
   alias WalEx.Config.Registry, as: WalExRegistry
   alias WalEx.Decoder
   alias WalEx.Replication.Publisher
@@ -144,9 +145,11 @@ defmodule WalEx.Replication.Server do
   end
 
   def handle_data(<<?k, wal_end::64, _clock::64, reply>>, state) do
+    wal_end = Progress.oldest_running_wal_end(state.app_name) || wal_end + 1
+
     messages =
       case reply do
-        1 -> [<<?r, wal_end + 1::64, wal_end + 1::64, wal_end + 1::64, current_time()::64, 0>>]
+        1 -> [<<?r, wal_end::64, wal_end::64, wal_end::64, current_time()::64, 0>>]
         0 -> []
       end
 
