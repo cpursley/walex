@@ -5,6 +5,10 @@ defmodule WalEx.Config.Registry do
 
   @walex_registry :walex_registry
 
+  def child_spec() do
+    {Registry, keys: :unique, name: @walex_registry}
+  end
+
   def start_registry do
     case Process.whereis(@walex_registry) do
       nil ->
