@@ -27,6 +27,7 @@ defmodule WalEx.DatabaseTest do
   describe "logical replication" do
     setup do
       {:ok, database_pid} = start_database()
+      pg_drop_slots(database_pid)
 
       %{database_pid: database_pid}
     end
@@ -49,7 +50,7 @@ defmodule WalEx.DatabaseTest do
     test "should start replication slot", %{database_pid: database_pid} do
       assert {:ok, replication_pid} = WalExSupervisor.start_link(@base_configs)
       assert is_pid(replication_pid)
-      assert [@replication_slot | _replication_slots] = pg_replication_slots(database_pid)
+      assert [@replication_slot] = pg_replication_slots(database_pid)
     end
 
     test "user-defined slot_name", %{database_pid: database_pid} do
@@ -60,7 +61,7 @@ defmodule WalEx.DatabaseTest do
       assert {:ok, replication_pid} = WalExSupervisor.start_link(config)
 
       assert is_pid(replication_pid)
-      assert [slot | _replication_slots] = pg_replication_slots(database_pid)
+      assert [slot] = pg_replication_slots(database_pid)
       assert Map.fetch!(slot, "slot_name") == slot_name
     end
 
@@ -69,7 +70,7 @@ defmodule WalEx.DatabaseTest do
       database_pid = get_database_pid(supervisor_pid)
 
       assert is_pid(database_pid)
-      assert [@replication_slot | _replication_slots] = pg_replication_slots(database_pid)
+      assert [@replication_slot] = pg_replication_slots(database_pid)
 
       assert Process.exit(database_pid, :kill)
              |> tap_debug("Forcefully killed database connection: ")
