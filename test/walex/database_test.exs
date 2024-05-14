@@ -221,7 +221,7 @@ defmodule WalEx.DatabaseTest do
   end
 
   def pg_restart(:docker) do
-    case(System.shell("docker compose -f docker-compose.dbs.yml restart db")) do
+    case(System.shell("docker compose -f docker-compose.dbs.yml restart db -t 2")) do
       {_, 0} ->
         :ok
 
