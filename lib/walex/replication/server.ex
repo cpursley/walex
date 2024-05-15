@@ -85,8 +85,14 @@ defmodule WalEx.Replication.Server do
   end
 
   @impl true
-  def handle_result(results, %{step: :publication_exists}) do
-    raise "Publication does not exist. #{inspect(results)}"
+  def handle_result(results, %{step: :publication_exists} = state) do
+    case results do
+      [%Postgrex.Result{num_rows: 0}] ->
+        raise "Publication doesn't exists. publication: #{inspect(state.publication)}"
+
+      _ ->
+        raise "Unexpected result when checking if publication exists. #{inspect(results)}"
+    end
   end
 
   @impl true
