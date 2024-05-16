@@ -22,11 +22,17 @@ defmodule WalEx.DatabaseTest do
     destinations: [modules: [TestModule]]
   ]
 
-  @replication_slot %{"active" => true, "slot_name" => "todos_walex", "slot_type" => "logical"}
+  @replication_slot %{
+    "active" => true,
+    "slot_name" => "todos_walex",
+    "slot_type" => "logical",
+    "temporary" => true
+  }
 
   describe "logical replication" do
     setup do
       {:ok, database_pid} = start_database()
+      pg_drop_slots(database_pid)
 
       %{database_pid: database_pid}
     end
@@ -49,7 +55,7 @@ defmodule WalEx.DatabaseTest do
     test "should start replication slot", %{database_pid: database_pid} do
       assert {:ok, replication_pid} = WalExSupervisor.start_link(@base_configs)
       assert is_pid(replication_pid)
-      assert [@replication_slot | _replication_slots] = pg_replication_slots(database_pid)
+      assert [@replication_slot] = pg_replication_slots(database_pid)
     end
 
     test "user-defined slot_name", %{database_pid: database_pid} do
@@ -60,7 +66,7 @@ defmodule WalEx.DatabaseTest do
       assert {:ok, replication_pid} = WalExSupervisor.start_link(config)
 
       assert is_pid(replication_pid)
-      assert [slot | _replication_slots] = pg_replication_slots(database_pid)
+      assert [slot] = pg_replication_slots(database_pid)
       assert Map.fetch!(slot, "slot_name") == slot_name
     end
 
@@ -69,7 +75,7 @@ defmodule WalEx.DatabaseTest do
       database_pid = get_database_pid(supervisor_pid)
 
       assert is_pid(database_pid)
-      assert [@replication_slot | _replication_slots] = pg_replication_slots(database_pid)
+      assert [@replication_slot] = pg_replication_slots(database_pid)
 
       assert Process.exit(database_pid, :kill)
              |> tap_debug("Forcefully killed database connection: ")
@@ -142,6 +148,53 @@ defmodule WalEx.DatabaseTest do
       assert is_pid(new_database_pid)
       refute database_pid == new_database_pid
       assert_update_user(new_database_pid)
+    end
+
+    test "durable replication slot", %{database_pid: database_pid} do
+      assert [] = pg_replication_slots(database_pid)
+
+      slot_name = "durable_slot"
+      durable_opts = Keyword.merge(@base_configs, durable_slot: true, slot_name: slot_name)
+
+      durable_slot = %{
+        "active" => true,
+        "slot_name" => slot_name,
+        "slot_type" => "logical",
+        "temporary" => false
+      }
+
+      stopped_slot = Map.replace(durable_slot, "active", false)
+
+      start_supervised!({WalExSupervisor, durable_opts},
+        restart: :temporary,
+        id: :ok_supervisor
+      )
+
+      assert [^durable_slot] = pg_replication_slots(database_pid)
+
+      other_app_opts = Keyword.replace!(durable_opts, :name, :other_app)
+
+      assert {:error, {{:shutdown, error}, _}} =
+               start_supervised({WalExSupervisor, other_app_opts},
+                 restart: :temporary,
+                 id: :other_app_supervisor
+               )
+
+      assert {:failed_to_start_child, WalEx.Replication.Supervisor, {:shutdown, error}} = error
+      assert {:failed_to_start_child, WalEx.Replication.Server, error} = error
+      assert %RuntimeError{message: "Durable slot already active"} = error
+
+      stop_supervised(:ok_supervisor)
+      # sleep to make sure that Postgres detect that the connection is closed
+      Process.sleep(1_000)
+      assert [^stopped_slot] = pg_replication_slots(database_pid)
+
+      start_supervised!({WalExSupervisor, durable_opts},
+        restart: :temporary,
+        id: :ok_supervisor
+      )
+
+      assert [^durable_slot] = pg_replication_slots(database_pid)
     end
   end
 

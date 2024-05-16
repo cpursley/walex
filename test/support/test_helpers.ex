@@ -64,9 +64,16 @@ defmodule WalEx.Support.TestHelpers do
 
   def pg_replication_slots(database_pid) do
     pg_replication_slots_query =
-      "SELECT slot_name, slot_type, active FROM \"pg_replication_slots\";"
+      "SELECT slot_name, slot_type, active, temporary FROM \"pg_replication_slots\";"
 
     query(database_pid, pg_replication_slots_query)
+  end
+
+  def pg_drop_slots(database_pid) do
+    pg_drop_slots_query =
+      "SELECT pg_drop_replication_slot(slot_name) FROM \"pg_replication_slots\";"
+
+    query(database_pid, pg_drop_slots_query)
   end
 
   def update_user(database_pid) do

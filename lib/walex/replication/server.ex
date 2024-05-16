@@ -45,17 +45,23 @@ defmodule WalEx.Replication.Server do
   def init(opts) do
     app_name = Keyword.get(opts, :app_name)
 
-    [slot_name: slot_name, publication: publication] =
+    [
+      slot_name: slot_name,
+      publication: publication,
+      durable_slot: durable_slot
+    ] =
       WalEx.Config.get_configs(app_name, [
         :slot_name,
-        :publication
+        :publication,
+        :durable_slot
       ])
 
     state = %{
       step: :disconnected,
       app_name: app_name,
       slot_name: slot_name,
-      publication: publication
+      publication: publication,
+      durable_slot: durable_slot
     }
 
     {:ok, state}
@@ -69,19 +75,62 @@ defmodule WalEx.Replication.Server do
 
   @impl true
   def handle_result([%Postgrex.Result{num_rows: 1}], state = %{step: :publication_exists}) do
-    query = QueryBuilder.create_temporary_slot(state)
+    if state.durable_slot do
+      query = QueryBuilder.slot_exists(state)
+      {:query, query, %{state | step: :slot_exists}}
+    else
+      query = QueryBuilder.create_temporary_slot(state)
+      {:query, query, %{state | step: :create_slot}}
+    end
+  end
+
+  @impl true
+  def handle_result(results, %{step: :publication_exists} = state) do
+    case results do
+      [%Postgrex.Result{num_rows: 0}] ->
+        raise "Publication doesn't exists. publication: #{inspect(state.publication)}"
+
+      _ ->
+        raise "Unexpected result when checking if publication exists. #{inspect(results)}"
+    end
+  end
+
+  @impl true
+  def handle_result([%Postgrex.Result{num_rows: 0}], state = %{step: :slot_exists}) do
+    query = QueryBuilder.create_durable_slot(state)
     {:query, query, %{state | step: :create_slot}}
   end
 
   @impl true
-  def handle_result(results, %{step: :publication_exists}) do
-    raise "Publication does not exist. #{inspect(results)}"
+  def handle_result(
+        [%Postgrex.Result{columns: ["active"], rows: [[active]]}],
+        state = %{step: :slot_exists}
+      ) do
+    case active do
+      "f" ->
+        query = QueryBuilder.start_replication_slot(state)
+        {:stream, query, [], %{state | step: :streaming}}
+
+      "t" ->
+        raise "Durable slot already active"
+    end
+  end
+
+  @impl true
+  def handle_result(results, %{step: :slot_exists}) do
+    raise "Failed to check if durable slot already exists. #{inspect(results)}"
   end
 
   @impl true
   def handle_result([%Postgrex.Result{} | _results], state = %{step: :create_slot}) do
     query = QueryBuilder.start_replication_slot(state)
     {:stream, query, [], %{state | step: :streaming}}
+  end
+
+  @impl true
+  def handle_result(%Postgrex.Error{} = error, %{step: :create_slot}) do
+    # if durable slot, can happen if multiple instances try to create the same slot
+    raise "Failed to create replication slot, #{inspect(error)}"
   end
 
   @impl true
