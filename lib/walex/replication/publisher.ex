@@ -67,9 +67,6 @@ defmodule WalEx.Replication.Publisher do
       )
       when commit_lsn == current_txn_lsn do
     Destinations.process(txn, app_name)
-
-    %{state | transaction: nil}
-
     {:noreply, state}
   end
 

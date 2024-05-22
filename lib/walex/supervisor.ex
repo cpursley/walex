@@ -68,8 +68,8 @@ defmodule WalEx.Supervisor do
 
     [
       {WalExConfig, configs: configs},
-      {ReplicationSupervisor, app_name: app_name},
-      {DestinationsSupervisor, configs}
+      {DestinationsSupervisor, configs},
+      {ReplicationSupervisor, app_name: app_name}
     ]
   end
 end
