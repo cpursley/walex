@@ -9,7 +9,6 @@ defmodule WalEx.Replication.Server do
 
   alias WalEx.Config.Registry, as: WalExRegistry
   alias WalEx.Decoder
-  alias WalEx.Replication.Publisher
   alias WalEx.Replication.QueryBuilder
 
   def start_link(opts) do
@@ -48,12 +47,14 @@ defmodule WalEx.Replication.Server do
     [
       slot_name: slot_name,
       publication: publication,
-      durable_slot: durable_slot
+      durable_slot: durable_slot,
+      message_middleware: message_middleware
     ] =
       WalEx.Config.get_configs(app_name, [
         :slot_name,
         :publication,
-        :durable_slot
+        :durable_slot,
+        :message_middleware
       ])
 
     state = %{
@@ -61,7 +62,8 @@ defmodule WalEx.Replication.Server do
       app_name: app_name,
       slot_name: slot_name,
       publication: publication,
-      durable_slot: durable_slot
+      durable_slot: durable_slot,
+      message_middleware: message_middleware
     }
 
     {:ok, state}
@@ -138,7 +140,7 @@ defmodule WalEx.Replication.Server do
   def handle_data(<<?w, _wal_start::64, _wal_end::64, _clock::64, rest::binary>>, state) do
     rest
     |> Decoder.decode_message()
-    |> Publisher.process_message_async(state.app_name)
+    |> state.message_middleware.(state.app_name)
 
     {:noreply, state}
   end
