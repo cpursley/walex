@@ -138,7 +138,7 @@ defmodule WalEx.Replication.Server do
   def handle_data(<<?w, _wal_start::64, _wal_end::64, _clock::64, rest::binary>>, state) do
     rest
     |> Decoder.decode_message()
-    |> Publisher.process_message(state.app_name)
+    |> Publisher.process_message_async(state.app_name)
 
     {:noreply, state}
   end
