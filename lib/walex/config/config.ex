@@ -10,6 +10,29 @@ defmodule WalEx.Config do
   @allowed_config_value ~w(database hostname name password port publication username webhook_signing_secret slot_name durable_slot message_middleware)a
   @allowed_config_values ~w(destinations event_relay modules subscriptions)a
 
+  @type destinations_t :: [
+          {:modules, [module]} | {:webhooks, [binary]} | {:event_relay_topic, binary}
+        ]
+
+  @type start_opts :: [
+          {:database, binary}
+          | {:hostname, binary}
+          | {:name, binary}
+          | {:password, binary}
+          | {:port, binary}
+          | {:publication, binary}
+          | {:username, binary}
+          | {:webhook_signing_secret, binary}
+          | {:slot_name, binary}
+          | {:durable_slot, boolean}
+          | {:message_middleware, (term, term -> :ok)}
+          | {:destinations, destinations_t()}
+          | {:event_relay, keyword()}
+          | {:modules, [module]}
+          | {:subscriptions, [binary()]}
+        ]
+
+  @spec start_link(opts :: start_opts()) :: Agent.on_start()
   def start_link(opts) do
     configs =
       opts

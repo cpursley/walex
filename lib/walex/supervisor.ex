@@ -8,6 +8,7 @@ defmodule WalEx.Supervisor do
   alias WalEx.Replication.Supervisor, as: ReplicationSupervisor
   alias WalExConfig.Registry, as: WalExRegistry
 
+  @spec start_link(opts :: WalExConfig.start_opts()) :: Supervisor.on_start()
   def start_link(opts) do
     app_name = Keyword.get(opts, :name)
     module_names = build_module_names(app_name, opts)
