@@ -4,11 +4,35 @@ defmodule WalEx.Config do
   """
   use Agent
 
+  alias WalEx.Replication.Publisher
   alias WalEx.Config.Registry, as: WalExRegistry
 
-  @allowed_config_value ~w(database hostname name password port publication username webhook_signing_secret slot_name durable_slot)a
+  @allowed_config_value ~w(database hostname name password port publication username webhook_signing_secret slot_name durable_slot message_middleware)a
   @allowed_config_values ~w(destinations event_relay modules subscriptions)a
 
+  @type destinations_t :: [
+          {:modules, [module]} | {:webhooks, [binary]} | {:event_relay_topic, binary}
+        ]
+
+  @type start_opts :: [
+          {:database, binary}
+          | {:hostname, binary}
+          | {:name, binary}
+          | {:password, binary}
+          | {:port, binary}
+          | {:publication, binary}
+          | {:username, binary}
+          | {:webhook_signing_secret, binary}
+          | {:slot_name, binary}
+          | {:durable_slot, boolean}
+          | {:message_middleware, (term, term -> :ok)}
+          | {:destinations, destinations_t()}
+          | {:event_relay, keyword()}
+          | {:modules, [module]}
+          | {:subscriptions, [binary()]}
+        ]
+
+  @spec start_link(opts :: start_opts()) :: Agent.on_start()
   def start_link(opts) do
     configs =
       opts
@@ -127,7 +151,8 @@ defmodule WalEx.Config do
       webhook_signing_secret: Keyword.get(configs, :webhook_signing_secret),
       event_relay: Keyword.get(configs, :event_relay),
       slot_name: Keyword.get(configs, :slot_name) |> parse_slot_name(name),
-      durable_slot: Keyword.get(configs, :durable_slot, false) == true
+      durable_slot: Keyword.get(configs, :durable_slot, false) == true,
+      message_middleware: Keyword.get(configs, :message_middleware) |> parse_message_middleware()
     ]
   end
 
@@ -199,6 +224,11 @@ defmodule WalEx.Config do
 
   defp parse_slot_name(nil, app_name), do: to_string(app_name) <> "_walex"
   defp parse_slot_name(slot_name, _), do: slot_name
+
+  defp parse_message_middleware(message_middleware) when is_function(message_middleware, 2),
+    do: message_middleware
+
+  defp parse_message_middleware(nil), do: &Publisher.process_message_async/2
 
   defp set_url_opts(username, password, database, info) do
     url_opts = [

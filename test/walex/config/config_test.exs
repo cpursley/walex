@@ -93,7 +93,8 @@ defmodule WalEx.ConfigTest do
                webhook_signing_secret: nil,
                event_relay: nil,
                slot_name: "my_app_walex",
-               durable_slot: false
+               durable_slot: false,
+               message_middleware: &WalEx.Replication.Publisher.process_message_async/2
              ] == Config.get_configs(@app_name)
     end
   end
