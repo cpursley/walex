@@ -1,10 +1,10 @@
 defmodule WalEx.Replication.Publisher do
   @moduledoc """
-  Publishes messages from Replication to Events & Destinations
+  Publishes messages from Replication to Events
   """
   use GenServer
 
-  alias WalEx.{Changes, Config, Destinations, Types}
+  alias WalEx.{Changes, Config, Events, Types}
   alias WalEx.Decoder.Messages
 
   defmodule(State,
@@ -72,7 +72,7 @@ defmodule WalEx.Replication.Publisher do
          %State{transaction: {current_txn_lsn, txn}, relations: _relations} = state
        )
        when commit_lsn == current_txn_lsn do
-    Destinations.process(txn, app_name)
+    Events.process(txn, app_name)
     state
   end
 

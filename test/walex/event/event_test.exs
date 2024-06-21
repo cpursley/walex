@@ -2,8 +2,8 @@ defmodule WalEx.EventTest do
   use ExUnit.Case, async: false
   import WalEx.Support.TestHelpers
 
-  alias WalEx.Destinations.EventModules, as: DestinationsEventModules
-  alias WalEx.Destinations.Supervisor, as: DestinationsSupervisor
+  alias WalEx.Events.EventModules, as: EventsEventModules
+  alias WalEx.Events.Supervisor, as: EventsSupervisor
   alias WalEx.Supervisor, as: WalExSupervisor
   alias WalEx.Replication.Supervisor, as: ReplicationSupervisor
   alias WalEx.Replication.Publisher, as: ReplicationPublisher
@@ -38,12 +38,12 @@ defmodule WalEx.EventTest do
       database_pid: database_pid,
       supervisor_pid: supervisor_pid
     } do
-      destinations_supervisor_pid = find_child_pid(supervisor_pid, DestinationsSupervisor)
+      destinations_supervisor_pid = find_child_pid(supervisor_pid, EventsSupervisor)
 
       assert is_pid(destinations_supervisor_pid)
 
       events_pid =
-        find_child_pid(destinations_supervisor_pid, DestinationsEventModules)
+        find_child_pid(destinations_supervisor_pid, EventsEventModules)
 
       assert is_pid(events_pid)
 
@@ -89,11 +89,11 @@ defmodule WalEx.EventTest do
       database_pid: database_pid,
       supervisor_pid: supervisor_pid
     } do
-      destinations_supervisor_pid = find_child_pid(supervisor_pid, DestinationsSupervisor)
+      destinations_supervisor_pid = find_child_pid(supervisor_pid, EventsSupervisor)
 
       assert is_pid(destinations_supervisor_pid)
 
-      events_pid = find_child_pid(destinations_supervisor_pid, DestinationsEventModules)
+      events_pid = find_child_pid(destinations_supervisor_pid, EventsEventModules)
 
       assert is_pid(events_pid)
 
@@ -123,7 +123,7 @@ defmodule WalEx.EventTest do
       :timer.sleep(1000)
 
       new_events_pid =
-        find_child_pid(destinations_supervisor_pid, DestinationsEventModules)
+        find_child_pid(destinations_supervisor_pid, EventsEventModules)
 
       assert is_pid(new_events_pid)
       refute events_pid == new_events_pid

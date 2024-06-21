@@ -1,13 +1,13 @@
-defmodule WalEx.Destinations do
+defmodule WalEx.Events do
   @moduledoc """
-  Process destinations
+  Process events
   """
 
   use GenServer
 
-  alias WalEx.{Destinations, Config}
+  alias WalEx.{Events, Config}
   alias Config.Registry
-  alias Destinations.EventModules
+  alias Events.EventModules
 
   def start_link(opts) do
     name =

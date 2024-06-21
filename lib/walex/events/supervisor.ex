@@ -1,11 +1,11 @@
-defmodule WalEx.Destinations.Supervisor do
+defmodule WalEx.Events.Supervisor do
   @moduledoc false
 
   use Supervisor
 
   alias WalEx.Config
-  alias WalEx.Destinations
-  alias Destinations.EventModules
+  alias WalEx.Events
+  alias Events.EventModules
 
   def start_link(opts) do
     app_name = Keyword.get(opts, :name)
@@ -21,7 +21,7 @@ defmodule WalEx.Destinations.Supervisor do
       |> Keyword.get(:name)
 
     children =
-      [{Destinations, app_name: app_name}]
+      [{Events, app_name: app_name}]
       |> maybe_event_modules(app_name)
 
     Supervisor.init(children, strategy: :one_for_one, max_restarts: 10)

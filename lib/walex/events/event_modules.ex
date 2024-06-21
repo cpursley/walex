@@ -1,4 +1,4 @@
-defmodule WalEx.Destinations.EventModules do
+defmodule WalEx.Events.EventModules do
   @moduledoc """
   Process events (call modules containing process functions)
   """
