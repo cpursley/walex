@@ -33,7 +33,7 @@ defmodule WalEx.Destinations.EventModules do
   @impl true
   def handle_call({:process, txn, server}, _from, state) do
     server
-    |> WalEx.Config.get_configs(:destinations)
+    |> WalEx.Config.get_configs(:modules)
     |> process_events(txn)
 
     {:reply, :ok, state}
@@ -41,7 +41,7 @@ defmodule WalEx.Destinations.EventModules do
 
   defp process_events(nil, %{changes: [], commit_timestamp: _}), do: nil
 
-  defp process_events([modules: modules], txn) when is_list(modules) do
+  defp process_events(modules, txn) when is_list(modules) do
     process_modules(modules, txn)
   end
 

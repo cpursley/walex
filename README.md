@@ -3,9 +3,9 @@
 Simple and reliable Postgres [Change Data Capture
 (CDC)](https://en.wikipedia.org/wiki/Change_data_capture) in Elixir.
 
-WalEx allows you to listen to change events on your Postgres tables then send them on to [destinations](#destinations) or perform callback-like actions with the data via the [DSL](#elixir-dsl). For example:
+WalEx allows you to listen to change events on your Postgres tables then perform callback-like actions with the data via the [Event DSL](#elixir-dsl). For example:
 
-- Stream database changes to an event service like [EventRelay](https://github.com/eventrelay/eventrelay)
+- Stream database changes to an external service
 - Send a user a welcome email after they create a new account
 - Augment an existing Postgres-backed application with business logic
 - Send events to third party services (analytics, CRM, [webhooks](#webhooks))
@@ -122,21 +122,9 @@ config :my_app, WalEx,
   database: "postgres",
   publication: "events",
   subscriptions: ["user", "todo"],
-  # optional
-  destinations: [
-    # WalEx assumes your module names match this pattern: MyApp.Events.User, MyApp.Events.ToDo, etc
-    # but you can also specify custom modules like so:
-    # modules: [MyApp.CustomModule, MyApp.OtherCustomModule],
-    webhooks: ["https://webhook.site/c2f32b47-33ef-425c-9ed2-f369529a0de8"],
-    event_relay_topic: "todos"
-  ],
-  webhook_signing_secret: "9da89f5f8f4717099c698a17c0d3a1869ee227de06c27b18",
-  event_relay: [
-    host: "localhost",
-    port: "50051",
-    token:
-      "cmpiNmpFSGhtNVhORFVubDFzUW9OR1JqTlFZOVFFcjRwZWMxS2VWRzJIOnY5NkFRQVFjSVp0TWVmc3hpRl8ydVZuaW9FTC0wX3JrZjhXcTE4MS1EbnVLU1p5VF9OZkpBZGs1SlFuQlNNdVg="
-  ],
+  # WalEx assumes your module names match this pattern: MyApp.Events.User, MyApp.Events.ToDo, etc
+  # but you can also specify custom modules like so:
+  # modules: [MyApp.CustomModule, MyApp.OtherCustomModule],
   name: MyApp
 ```
 
@@ -220,11 +208,9 @@ where _name_ field was changed):
 ]
 ```
 
-### Destinations
+### Event Module
 
-#### Event Module
-
-If your app is named _MyApp_ and you have a subscription called _:user_ (which represents a database table), WalEx assumes you have a module called `MyApp.Events.User` that uses WalEx Event. But you can also define any custom module, just be sure to add it to the _modules_ config under _destinations_.
+If your app is named _MyApp_ and you have a subscription called _:user_ (which represents a database table), WalEx assumes you have a module called `MyApp.Events.User` that uses WalEx Event. But you can also define any custom module, just be sure to add it to the _modules_ config.
 
 Note that the result of `events` is a list. This is because WalEx returns a _List_ of  _transactions_ for a particular table when there's a change event. Often times this will just contain one result, but it could be many (for example, if you use database triggers to update a column after an insert).
 
@@ -312,26 +298,6 @@ defmodule MyApp.Events.User do
 end
 ```
 
-You can optionally [configure](#config) WalEx to automatically send events to the following destinations without needing to know Elixir:
-
-#### Webhooks
-
-Send subscribed events to one or more webhooks. WalEx supports the [Standard Webhooks](https://www.standardwebhooks.com) spec via the [webhoox](https://github.com/cpursley/webhoox) library (which can also be used to receive webhooks in Elixir).
-
-#### EventRelay
-
-If you need something more durable and flexible than webhooks, check out [EventRelay](https://github.com/eventrelay/eventrelay).
-
-In EventRelay, you'll need to create a topic matching what's in the WalEx destinations config. So, if your event_relay_topic is called _todos_ (usually this is the database name), then your topic name in EventRelay should be `todos`. Here's how to do it via grpcurl:
-
-```bash
-grpcurl -H "Authorization: Bearer {api_key_token}" -plaintext -proto event_relay.proto -d '{"name": "todos"}' localhost:50051 eventrelay.Topics.CreateTopic
-```
-
-#### Coming Soon
-
-More destinations coming. Pull requests welcome!
-
 ## Test
 
 You'll need a local Postgres instance running
@@ -340,9 +306,3 @@ You'll need a local Postgres instance running
 MIX_ENV=test mix walex.setup
 MIX_ENV=test mix test
 ```
-
-## Help?
-
-I would love to have your help! I do ask that if you do find a bug, please add a test to your PR that shows the bug and how it was fixed.
-
-Thanks!

@@ -22,7 +22,7 @@ defmodule WalEx.ConfigTest do
     socket_options: [],
     subscriptions: ["subscriptions"],
     publication: "publication",
-    destinations: [modules: [MyApp.CustomModule]]
+    modules: [MyApp.CustomModule]
   ]
 
   setup_all do
@@ -89,7 +89,7 @@ defmodule WalEx.ConfigTest do
                socket_options: [],
                subscriptions: ["subscriptions"],
                publication: "publication",
-               destinations: [modules: [MyApp.CustomModule]],
+               modules: [MyApp.CustomModule],
                webhook_signing_secret: nil,
                event_relay: nil,
                slot_name: "my_app_walex",
