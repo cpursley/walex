@@ -3,12 +3,12 @@
 Simple and reliable Postgres [Change Data Capture
 (CDC)](https://en.wikipedia.org/wiki/Change_data_capture) in Elixir.
 
-WalEx allows you to listen to change events on your Postgres tables then perform callback-like actions with the data via the [Event DSL](#elixir-dsl). For example:
+WalEx allows you to listen to change events on your Postgres tables then perform callback-like actions with the data via the [Event DSL](#event-module). For example:
 
 - Stream database changes to an external service
 - Send a user a welcome email after they create a new account
 - Augment an existing Postgres-backed application with business logic
-- Send events to third party services (analytics, CRM, [webhooks](#webhooks))
+- Send events to third party services (analytics, CRM, webhooks, etc))
 - Update index / invalidate cache whenever a record is changed
 
 You can learn more about CDC and what you can do with it here: [Why capture changes?](https://bbhoss.io/posts/announcing-cainophile/#why-capture-changes)
@@ -95,7 +95,6 @@ Also, be mindful of [replication gotchas](https://pgdash.io/blog/postgres-replic
 
 Amazon (AWS) RDS Postgres allows you to configure logical replication.
 
-- <https://debezium.io/documentation/reference/1.4/connectors/postgresql.html#setting-up-postgresql>
 - <https://dev.to/vumdao/how-to-change-rds-postgresql-configurations-2kmk>
 
 When creating a new Postgres database on RDS, you'll need to set a Parameter
