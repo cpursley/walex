@@ -1,11 +1,11 @@
-defmodule WalEx.Destinations.Supervisor do
+defmodule WalEx.Events.Supervisor do
   @moduledoc false
 
   use Supervisor
 
   alias WalEx.Config
-  alias WalEx.Destinations
-  alias Destinations.{EventModules, EventRelay, Webhooks}
+  alias WalEx.Events
+  alias Events.EventModules
 
   def start_link(opts) do
     app_name = Keyword.get(opts, :name)
@@ -21,10 +21,8 @@ defmodule WalEx.Destinations.Supervisor do
       |> Keyword.get(:name)
 
     children =
-      [{Destinations, app_name: app_name}]
+      [{Events, app_name: app_name}]
       |> maybe_event_modules(app_name)
-      |> maybe_webhooks(app_name)
-      |> maybe_event_relay(app_name)
 
     Supervisor.init(children, strategy: :one_for_one, max_restarts: 10)
   end
@@ -34,20 +32,6 @@ defmodule WalEx.Destinations.Supervisor do
     has_module_config = is_list(modules) and modules != []
 
     maybe_set_child(children, has_module_config, {EventModules, app_name: app_name})
-  end
-
-  defp maybe_webhooks(children, app_name) do
-    webhooks = Config.get_webhooks(app_name)
-    has_webhook_config = is_list(webhooks) and webhooks != []
-
-    maybe_set_child(children, has_webhook_config, {Webhooks, app_name: app_name})
-  end
-
-  defp maybe_event_relay(children, app_name) do
-    event_relay = Config.get_event_relay_topic(app_name)
-    has_event_relay_config = is_binary(event_relay) and event_relay != ""
-
-    maybe_set_child(children, has_event_relay_config, {EventRelay, app_name: app_name})
   end
 
   defp maybe_set_child(children, true, child), do: children ++ [child]

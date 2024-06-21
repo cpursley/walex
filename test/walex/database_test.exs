@@ -19,7 +19,7 @@ defmodule WalEx.DatabaseTest do
     port: 5432,
     subscriptions: ["user", "todo"],
     publication: "events",
-    destinations: [modules: [TestModule]]
+    modules: [TestModule]
   ]
 
   @replication_slot %{

@@ -8,11 +8,7 @@ defmodule WalEx.Config do
   alias WalEx.Config.Registry, as: WalExRegistry
 
   @allowed_config_value ~w(database hostname name password port publication username webhook_signing_secret slot_name durable_slot message_middleware)a
-  @allowed_config_values ~w(destinations event_relay modules subscriptions)a
-
-  @type destinations_t :: [
-          {:modules, [module]} | {:webhooks, [binary]} | {:event_relay_topic, binary}
-        ]
+  @allowed_config_values ~w(modules subscriptions)a
 
   @type start_opts :: [
           {:database, binary}
@@ -26,7 +22,6 @@ defmodule WalEx.Config do
           | {:slot_name, binary}
           | {:durable_slot, boolean}
           | {:message_middleware, (term, term -> :ok)}
-          | {:destinations, destinations_t()}
           | {:event_relay, keyword()}
           | {:modules, [module]}
           | {:subscriptions, [binary()]}
@@ -71,22 +66,7 @@ defmodule WalEx.Config do
 
   def get_database(app_name), do: get_configs(app_name, :database)
 
-  def get_destination(app_name, destination) do
-    case get_configs(app_name, :destinations) do
-      destinations when is_list(destinations) and destinations != [] ->
-        destinations
-        |> Keyword.get(destination, nil)
-
-      _ ->
-        nil
-    end
-  end
-
-  def get_event_modules(app_name), do: get_destination(app_name, :modules)
-
-  def get_webhooks(app_name), do: get_destination(app_name, :webhooks)
-
-  def get_event_relay_topic(app_name), do: get_destination(app_name, :event_relay_topic)
+  def get_event_modules(app_name), do: get_configs(app_name, :modules)
 
   def add_config(app_name, key, new_values)
       when is_list(new_values) and key in @allowed_config_values do
@@ -131,8 +111,7 @@ defmodule WalEx.Config do
 
     name = Keyword.get(configs, :name)
     subscriptions = Keyword.get(configs, :subscriptions, [])
-    destinations = Keyword.get(configs, :destinations, [])
-    modules = Keyword.get(destinations, :modules, [])
+    modules = Keyword.get(configs, :modules, [])
     module_names = build_module_names(name, modules, subscriptions)
 
     [
@@ -147,7 +126,7 @@ defmodule WalEx.Config do
       socket_options: Keyword.get(configs, :socket_options, []),
       subscriptions: subscriptions,
       publication: Keyword.get(configs, :publication),
-      destinations: Keyword.put(destinations, :modules, module_names),
+      modules: module_names,
       webhook_signing_secret: Keyword.get(configs, :webhook_signing_secret),
       event_relay: Keyword.get(configs, :event_relay),
       slot_name: Keyword.get(configs, :slot_name) |> parse_slot_name(name),

@@ -4,7 +4,7 @@ defmodule WalEx.MixProject do
   def project do
     [
       app: :walex,
-      version: "3.8.0",
+      version: "4.0.0",
       elixir: "~> 1.15",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -30,18 +30,13 @@ defmodule WalEx.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:postgrex, "~> 0.17.4"},
+      {:postgrex, "~> 0.18.0"},
       {:decimal, "~> 2.1.1"},
       {:jason, "~> 1.4"},
       {:timex, "~> 3.7"},
-      {:req, "~> 0.4.8"},
-      {:uniq, "~> 0.6.1"},
-      {:eventrelay_client, "~> 0.1.0"},
-      # {:eventrelay_client, github: "eventrelay/eventrelay_client_elixir", branch: "main"},
-      {:webhoox, "~> 0.3.0"},
 
       # Dev & Test
-      {:ex_doc, "~> 0.31.1", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.34.1", only: :dev, runtime: false},
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7.3", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.10", only: [:dev, :test], runtime: false},

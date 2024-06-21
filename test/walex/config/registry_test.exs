@@ -57,7 +57,7 @@ defmodule WalEx.Config.RegistryTest do
       assert GenServer.whereis(
                WalExRegistry.set_name(
                  :set_supervisor,
-                 WalEx.Destinations.Supervisor,
+                 WalEx.Events.Supervisor,
                  :test_name
                )
              )
@@ -72,9 +72,7 @@ defmodule WalEx.Config.RegistryTest do
              )
              |> is_pid()
 
-      assert GenServer.whereis(
-               WalExRegistry.set_name(:set_gen_server, WalEx.Destinations, :test_name)
-             )
+      assert GenServer.whereis(WalExRegistry.set_name(:set_gen_server, WalEx.Events, :test_name))
              |> is_pid()
 
       assert GenServer.whereis(

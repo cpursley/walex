@@ -4,7 +4,7 @@ defmodule WalEx.Supervisor do
   use Supervisor
 
   alias WalEx.Config, as: WalExConfig
-  alias WalEx.Destinations.Supervisor, as: DestinationsSupervisor
+  alias WalEx.Events.Supervisor, as: EventsSupervisor
   alias WalEx.Replication.Supervisor, as: ReplicationSupervisor
   alias WalExConfig.Registry, as: WalExRegistry
 
@@ -69,7 +69,7 @@ defmodule WalEx.Supervisor do
 
     [
       {WalExConfig, configs: configs},
-      {DestinationsSupervisor, configs},
+      {EventsSupervisor, configs},
       {ReplicationSupervisor, app_name: app_name}
     ]
   end

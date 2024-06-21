@@ -2,8 +2,8 @@ defmodule WalEx.EventDslTest do
   use ExUnit.Case, async: false
   import WalEx.Support.TestHelpers
 
-  alias WalEx.Destinations.EventModules, as: DestinationsEventModules
-  alias WalEx.Destinations.Supervisor, as: DestinationsSupervisor
+  alias WalEx.Events.EventModules, as: EventsEventModules
+  alias WalEx.Events.Supervisor, as: EventsSupervisor
   alias WalEx.Supervisor, as: WalExSupervisor
 
   @app_name :test_app
@@ -21,7 +21,7 @@ defmodule WalEx.EventDslTest do
     port: 5432,
     subscriptions: ["user", "todo"],
     publication: ["events"],
-    destinations: [modules: [TestApp.DslTestModule]]
+    modules: [TestApp.DslTestModule]
   ]
 
   describe "on_event/2" do
@@ -36,12 +36,12 @@ defmodule WalEx.EventDslTest do
       supervisor_pid: supervisor_pid,
       database_pid: database_pid
     } do
-      destinations_supervisor_pid = find_child_pid(supervisor_pid, DestinationsSupervisor)
+      destinations_supervisor_pid = find_child_pid(supervisor_pid, EventsSupervisor)
 
       assert is_pid(destinations_supervisor_pid)
 
       events_pid =
-        find_child_pid(destinations_supervisor_pid, DestinationsEventModules)
+        find_child_pid(destinations_supervisor_pid, EventsEventModules)
 
       assert is_pid(events_pid)
 
@@ -69,12 +69,12 @@ defmodule WalEx.EventDslTest do
       supervisor_pid: supervisor_pid,
       database_pid: database_pid
     } do
-      destinations_supervisor_pid = find_child_pid(supervisor_pid, DestinationsSupervisor)
+      destinations_supervisor_pid = find_child_pid(supervisor_pid, EventsSupervisor)
 
       assert is_pid(destinations_supervisor_pid)
 
       events_pid =
-        find_child_pid(destinations_supervisor_pid, DestinationsEventModules)
+        find_child_pid(destinations_supervisor_pid, EventsEventModules)
 
       assert is_pid(events_pid)
 
