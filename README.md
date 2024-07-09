@@ -297,6 +297,69 @@ defmodule MyApp.Events.User do
 end
 ```
 
+### Advanced usages
+
+##### Durable slot
+
+By default WalEx will create a temporary replication slot in Postgres.
+
+This means that if the connection between WalEx and Postgres gets interrupted (crash / disconnection / etc.),
+the replication slot will get dropped by Postgres.
+This makes using WalEx safer as there is not risk of filling up the disk of the Postgres writer instance in
+case of downtime.
+
+The downside being that this event-loss is more than likely.
+If this is a no-go, WalEx also supports durable replication.
+
+```elixir
+# config.exs
+
+config :my_app, WalEx,
+  # ...
+  durable_slot: true,
+  slot_name: my_app_replication_slot
+```
+
+Only a single process can be connected to a durable slot at once,
+in case the slot is already used `WalEx.Supervisor` will fail to start with a `RuntimeError`.
+
+Be warned that there are many additional potential gotchas (a detailed guide is planned).
+
+##### Event middleware / Back-pressure
+
+WalEx receives events from Postgres in `WalEx.Replication.Server` and then `cast` those to `WalEx.Replication.Publisher`.
+It's then `WalEx.Replication.Publisher` that is responsible to join these events together and process them.
+
+In the event where you'd expect Postgres to overwhelm WalEx and potentially cause OOMs,
+WalEx provides a config option that should help you implement back-pressure.
+
+As it's a quite advanced use, with many strong requirements,
+it's recommended instead to increase the amount of RAM of your instance.
+
+Never the less, if it's not an option or would like to control the consumption rate of events,
+WalEx provide the following configuration option:
+
+```
+config :my_app, WalEx,
+  # ...
+  message_middleware: fn message, app_name -> ... end
+```
+
+`message_middleware` allows you to define the way `WalEx.Replication.Server` and `WalEx.Replication.Publisher` communicate.
+
+If for instance you'd like to store these events to disk before processing them you would need to:
+
+- provide a `message_middleware` callback. It should serialize messages and store them to disk
+- add a supervised strictly-ordered disk consumer. On each event it would call one of:
+  - `WalEx.Replication.Publisher.process_message_async(message, app_name)`
+  - `WalEx.Replication.Publisher.process_message_sync(message, app_name)`
+
+Any back-pressure implementation needs to guarantee:
+
+- exact message ordering
+- exactly-once-delivery
+- that each running walex has an isolated back-pressure system (for instance one queue per instance)
+
 ## Test
 
 You'll need a local Postgres instance running
