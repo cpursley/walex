@@ -36,10 +36,10 @@ defmodule WalEx.MixProject do
       {:timex, "~> 3.7"},
 
       # Dev & Test
-      {:ex_doc, "~> 0.34.1", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.34.2", only: :dev, runtime: false},
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7.3", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.10", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.18.2", only: [:dev, :test], runtime: false},
       {:rambo, "~> 0.3.4", only: [:dev, :test], runtime: false}
     ]
   end
