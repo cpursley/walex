@@ -41,7 +41,7 @@ jobs:
         mix deps.get
 
     - name: Set up Postgres
-      run: docker-compose -f docker-compose.dbs.yml up -d
+      run: docker compose -f docker-compose.dbs.yml up -d
 
     - name: Set up test data
       run: mix walex.setup
