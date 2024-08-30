@@ -3,6 +3,8 @@
 Simple and reliable Postgres [Change Data Capture
 (CDC)](https://en.wikipedia.org/wiki/Change_data_capture) in Elixir.
 
+![Walex mascot](mascot.jpeg)
+
 WalEx allows you to listen to change events on your Postgres tables then perform callback-like actions with the data via the [Event DSL](#event-module). For example:
 
 - Stream database changes to an external service
