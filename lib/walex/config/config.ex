@@ -201,8 +201,35 @@ defmodule WalEx.Config do
         do: {k, if(is_binary(v), do: URI.decode(v), else: v)}
   end
 
-  defp parse_slot_name(nil, app_name), do: to_string(app_name) <> "_walex"
-  defp parse_slot_name(slot_name, _), do: slot_name
+  defp parse_slot_name(nil, app_name) do
+    app_name
+    |> to_string()
+    |> remove_prefix()
+    |> String.downcase()
+    |> replace_special_chars()
+    |> Kernel.<>("_walex")
+  end
+
+  defp parse_slot_name(slot_name, _) do
+    slot_name
+    |> to_string()
+    |> remove_prefix()
+    |> String.downcase()
+    |> replace_special_chars()
+  end
+
+  defp remove_prefix(name) do
+    name
+    |> String.split(".")
+    |> List.last()
+  end
+
+  defp replace_special_chars(name) do
+    name
+    |> String.replace(~r/[^a-z0-9]+/, "_")
+    |> String.replace(~r/_+/, "_")
+    |> String.trim("_")
+  end
 
   defp parse_message_middleware(message_middleware) when is_function(message_middleware, 2),
     do: message_middleware
