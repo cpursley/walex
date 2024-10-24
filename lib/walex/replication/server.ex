@@ -11,33 +11,16 @@ defmodule WalEx.Replication.Server do
   alias WalEx.Decoder
   alias WalEx.Replication.QueryBuilder
 
+  require Logger
+
+  @max_retries 10
+  @initial_backoff 1000
+
   def start_link(opts) do
     app_name = Keyword.get(opts, :app_name)
     opts = set_pgx_replication_conn_opts(app_name)
 
     Postgrex.ReplicationConnection.start_link(__MODULE__, [app_name: app_name], opts)
-  end
-
-  defp set_pgx_replication_conn_opts(app_name) do
-    database_configs_keys = [
-      :hostname,
-      :username,
-      :password,
-      :port,
-      :database,
-      :ssl,
-      :ssl_opts,
-      :socket_options
-    ]
-
-    extra_opts = [auto_reconnect: true]
-    database_configs = WalEx.Config.get_configs(app_name, database_configs_keys)
-
-    replications_name = [
-      name: WalExRegistry.set_name(:set_gen_server, __MODULE__, app_name)
-    ]
-
-    extra_opts ++ database_configs ++ replications_name
   end
 
   @impl true
@@ -90,7 +73,7 @@ defmodule WalEx.Replication.Server do
   def handle_result(results, %{step: :publication_exists} = state) do
     case results do
       [%Postgrex.Result{num_rows: 0}] ->
-        raise "Publication doesn't exists. publication: #{inspect(state.publication)}"
+        raise "Publication doesn't exist. publication: #{inspect(state.publication)}"
 
       _ ->
         raise "Unexpected result when checking if publication exists. #{inspect(results)}"
@@ -110,11 +93,17 @@ defmodule WalEx.Replication.Server do
       ) do
     case active do
       "f" ->
-        query = QueryBuilder.start_replication_slot(state)
-        {:stream, query, [], %{state | step: :streaming}}
+        Logger.info("Activating inactive replication slot: #{state.slot_name}")
+        start_replication_with_retry(state, 0, @initial_backoff)
 
       "t" ->
-        raise "Durable slot already active"
+        Logger.info(
+          "Replication slot #{state.slot_name} is active. Waiting for it to become inactive."
+        )
+
+        schedule_slot_check()
+
+        {:noreply, state}
     end
   end
 
@@ -125,8 +114,7 @@ defmodule WalEx.Replication.Server do
 
   @impl true
   def handle_result([%Postgrex.Result{} | _results], state = %{step: :create_slot}) do
-    query = QueryBuilder.start_replication_slot(state)
-    {:stream, query, [], %{state | step: :streaming}}
+    start_replication_with_retry(state, 0, @initial_backoff)
   end
 
   @impl true
@@ -136,7 +124,22 @@ defmodule WalEx.Replication.Server do
   end
 
   @impl true
-  # https://www.postgresql.org/docs/14/protocol-replication.html
+  def handle_result(
+        %Postgrex.Error{postgres: %{code: :object_in_use}},
+        state = %{step: {:start_replication, retry_count, backoff}}
+      ) do
+    Logger.warning("Replication slot in use, retrying... (attempt #{retry_count + 1})")
+    Process.sleep(backoff)
+    start_replication_with_retry(state, retry_count + 1, backoff * 2)
+  end
+
+  @impl true
+  def handle_result(_, state = %{step: {:start_replication, _retry_count, _backoff}}) do
+    Logger.info("Successfully started replication slot: #{state.slot_name}")
+    {:noreply, %{state | step: :streaming}}
+  end
+
+  @impl true
   def handle_data(<<?w, _wal_start::64, _wal_end::64, _clock::64, rest::binary>>, state) do
     rest
     |> Decoder.decode_message()
@@ -145,6 +148,7 @@ defmodule WalEx.Replication.Server do
     {:noreply, state}
   end
 
+  @impl true
   def handle_data(<<?k, wal_end::64, _clock::64, reply>>, state) do
     messages =
       case reply do
@@ -153,6 +157,55 @@ defmodule WalEx.Replication.Server do
       end
 
     {:noreply, messages, state}
+  end
+
+  @impl true
+  def handle_info(:check_slot_status, state) do
+    query = QueryBuilder.slot_exists(state)
+    {:query, query, %{state | step: :slot_exists}}
+  end
+
+  defp set_pgx_replication_conn_opts(app_name) do
+    database_configs_keys = [
+      :hostname,
+      :username,
+      :password,
+      :port,
+      :database,
+      :ssl,
+      :ssl_opts,
+      :socket_options
+    ]
+
+    extra_opts = [auto_reconnect: true]
+    database_configs = WalEx.Config.get_configs(app_name, database_configs_keys)
+
+    replications_name = [
+      name: WalExRegistry.set_name(:set_gen_server, __MODULE__, app_name)
+    ]
+
+    extra_opts ++ database_configs ++ replications_name
+  end
+
+  defp start_replication_with_retry(state, retry_count, backoff)
+       when retry_count < @max_retries do
+    query = QueryBuilder.start_replication_slot(state)
+    {:stream, query, [], %{state | step: {:start_replication, retry_count, backoff}}}
+  end
+
+  defp start_replication_with_retry(state, _retry_count, _backoff) do
+    Logger.warning(
+      "Failed to start replication slot after maximum retries. Scheduling another check."
+    )
+
+    schedule_slot_check()
+
+    {:noreply, state}
+  end
+
+  defp schedule_slot_check() do
+    # Check again after 5 seconds
+    Process.send_after(self(), :check_slot_status, 5000)
   end
 
   @epoch DateTime.to_unix(~U[2000-01-01 00:00:00Z], :microsecond)

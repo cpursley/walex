@@ -163,7 +163,7 @@ defmodule WalEx.DatabaseTest do
         "temporary" => false
       }
 
-      stopped_slot = Map.replace(durable_slot, "active", false)
+      inactive_slot = %{durable_slot | "active" => false}
 
       start_supervised!({WalExSupervisor, durable_opts},
         restart: :temporary,
@@ -174,27 +174,39 @@ defmodule WalEx.DatabaseTest do
 
       other_app_opts = Keyword.replace!(durable_opts, :name, :other_app)
 
-      assert {:error, {{:shutdown, error}, _}} =
-               start_supervised({WalExSupervisor, other_app_opts},
-                 restart: :temporary,
-                 id: :other_app_supervisor
-               )
+      # Start another supervisor with the same slot name
+      {:ok, pid} =
+        start_supervised({WalExSupervisor, other_app_opts},
+          restart: :temporary,
+          id: :other_app_supervisor
+        )
 
-      assert {:failed_to_start_child, WalEx.Replication.Supervisor, {:shutdown, error}} = error
-      assert {:failed_to_start_child, WalEx.Replication.Server, error} = error
-      assert %RuntimeError{message: "Durable slot already active"} = error
+      # Wait for the retry mechanism to complete
+      Process.sleep(10_000)
 
-      stop_supervised(:ok_supervisor)
-      # sleep to make sure that Postgres detect that the connection is closed
-      Process.sleep(1_000)
-      assert [^stopped_slot] = pg_replication_slots(database_pid)
+      # Check that the other app is still running and waiting
+      assert Process.alive?(pid)
 
-      start_supervised!({WalExSupervisor, durable_opts},
-        restart: :temporary,
-        id: :ok_supervisor
-      )
-
+      # The original slot should still be active
       assert [^durable_slot] = pg_replication_slots(database_pid)
+
+      # Stop the first supervisor
+      stop_supervised(:ok_supervisor)
+
+      # Sleep to make sure that Postgres detects that the connection is closed
+      # and the second supervisor has time to activate the slot
+      Process.sleep(10_000)
+
+      # The slot should now be active under the second supervisor
+      assert [^durable_slot] = pg_replication_slots(database_pid)
+
+      # Clean up
+      stop_supervised(:other_app_supervisor)
+
+      # Wait for the slot to become inactive after stopping all supervisors
+      Process.sleep(5_000)
+      [slot] = pg_replication_slots(database_pid)
+      assert slot == inactive_slot
     end
   end
 
