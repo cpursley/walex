@@ -46,7 +46,8 @@ defmodule WalEx.Replication.Server do
       slot_name: slot_name,
       publication: publication,
       durable_slot: durable_slot,
-      message_middleware: message_middleware
+      message_middleware: message_middleware,
+      wal_position: nil
     }
 
     {:ok, state}
@@ -113,7 +114,13 @@ defmodule WalEx.Replication.Server do
   end
 
   @impl true
-  def handle_result([%Postgrex.Result{} | _results], state = %{step: :create_slot}) do
+  def handle_result(
+        [%Postgrex.Result{columns: columns, rows: [row]} | _results],
+        state = %{step: :create_slot}
+      ) do
+    consistent_point = columns |> Enum.zip(row) |> Enum.into(%{}) |> Map.get("consistent_point")
+    wal_position = String.split(consistent_point, "/") |> List.last() |> String.to_integer(16)
+    state = Map.put(state, :wal_position, wal_position)
     start_replication_with_retry(state, 0, @initial_backoff)
   end
 
@@ -152,8 +159,18 @@ defmodule WalEx.Replication.Server do
   def handle_data(<<?k, wal_end::64, _clock::64, reply>>, state) do
     messages =
       case reply do
-        1 -> [<<?r, wal_end + 1::64, wal_end + 1::64, wal_end + 1::64, current_time()::64, 0>>]
-        0 -> []
+        1 ->
+          Logger.debug(
+            "standby status update, remote wal: #{wal_end} current wal: #{state.wal_position}"
+          )
+
+          [
+            <<?r, state.wal_position::64, state.wal_position::64, state.wal_position::64,
+              current_time()::64, 0>>
+          ]
+
+        0 ->
+          []
       end
 
     {:noreply, messages, state}
@@ -163,6 +180,24 @@ defmodule WalEx.Replication.Server do
   def handle_info(:check_slot_status, state) do
     query = QueryBuilder.slot_exists(state)
     {:query, query, %{state | step: :slot_exists}}
+  end
+
+  def handle_info({:ack_transaction, {_, wal_position}}, state) do
+    Logger.debug("moving wal position to #{wal_position}")
+    state = Map.put(state, :wal_position, wal_position)
+    {:noreply, state}
+  end
+
+  def ack(info, app_name) do
+    case Registry.lookup(:walex_registry, {__MODULE__, app_name}) do
+      [{pid, _}] ->
+        send(pid, {:ack_transaction, info})
+
+      [] ->
+        Logger.warning(
+          "Attempted to ack transaction but server process not found for #{app_name}"
+        )
+    end
   end
 
   defp set_pgx_replication_conn_opts(app_name) do

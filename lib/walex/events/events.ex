@@ -35,9 +35,9 @@ defmodule WalEx.Events do
 
   @impl true
   def handle_call({:process, txn, app_name}, _from, state) do
-    process_destinations(txn, app_name)
+    resp = process_destinations(txn, app_name)
 
-    {:reply, :ok, state}
+    {:reply, resp, state}
   end
 
   defp process_destinations(txn, app_name) do

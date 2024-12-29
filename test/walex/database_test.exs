@@ -82,6 +82,8 @@ defmodule WalEx.DatabaseTest do
 
       refute Process.info(database_pid)
 
+      Process.sleep(5000)
+
       new_database_pid = get_database_pid(supervisor_pid)
 
       assert is_pid(new_database_pid)
@@ -142,6 +144,8 @@ defmodule WalEx.DatabaseTest do
              |> tap_debug("Forcefully killed database connection: ")
 
       assert :ok == pg_restart()
+
+      Process.sleep(5000)
 
       new_database_pid = get_database_pid(supervisor_pid)
 
@@ -453,6 +457,8 @@ defmodule WalEx.DatabaseTest do
 
         :timer.sleep(1000)
       end)
+
+    IO.puts(capture_log)
 
     assert capture_log =~ "on_update event occurred"
     assert capture_log =~ "%WalEx.Event"
