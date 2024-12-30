@@ -155,6 +155,8 @@ defmodule WalEx.DatabaseTest do
     end
 
     test "durable replication slot", %{database_pid: database_pid} do
+      # TODO currently failing
+
       assert [] = pg_replication_slots(database_pid)
 
       slot_name = "durable_slot"
@@ -211,6 +213,35 @@ defmodule WalEx.DatabaseTest do
       Process.sleep(5_000)
       [slot] = pg_replication_slots(database_pid)
       assert slot == inactive_slot
+    end
+
+    @tag timeout: 80_000
+    test "should send wal again if module returns an error with durable slot" do
+      start_supervised!(QueuedResponses)
+
+      config =
+        @base_configs
+        |> Keyword.put(:modules, [UsesQueueModule])
+        |> Keyword.put(:durable_slot, true)
+        |> Keyword.put(:slot_name, "durable_retry_slot")
+
+      QueuedResponses.push(fn ->
+        Logger.debug("Error response")
+        :error
+      end)
+
+      QueuedResponses.push(fn ->
+        Logger.debug("Success response")
+        :ok
+      end)
+
+      assert {:ok, supervisor_pid} = TestSupervisor.start_link(config)
+      database_pid = get_database_pid(supervisor_pid)
+
+      log = assert_update_user(database_pid, sleep: 60_000)
+      assert log =~ "Error response"
+      assert log =~ "Failed to process transaction"
+      assert log =~ "Success response"
     end
   end
 
@@ -450,18 +481,22 @@ defmodule WalEx.DatabaseTest do
     )
   end
 
-  defp assert_update_user(database_pid) do
+  defp assert_update_user(database_pid, opts \\ []) do
+    sleep_duration = Keyword.get(opts, :sleep, 1000)
+
     capture_log =
       ExUnit.CaptureLog.capture_log(fn ->
         update_user(database_pid)
 
-        :timer.sleep(1000)
+        :timer.sleep(sleep_duration)
       end)
 
     IO.puts(capture_log)
 
     assert capture_log =~ "on_update event occurred"
     assert capture_log =~ "%WalEx.Event"
+
+    capture_log
   end
 end
 
@@ -490,5 +525,40 @@ defmodule TestModule do
     :user,
     [],
     fn events -> Logger.info("on_update event occurred: #{inspect(events, pretty: true)}") end
+  )
+end
+
+defmodule QueuedResponses do
+  use Agent
+
+  def start_link(_opts) do
+    Agent.start_link(fn -> [] end, name: __MODULE__)
+  end
+
+  def push(response) do
+    Agent.update(__MODULE__, fn responses -> [response | responses] end)
+  end
+
+  def pop do
+    case Agent.get_and_update(__MODULE__, &List.pop_at(&1, -1)) do
+      nil ->
+        raise "No responses in queue."
+
+      response ->
+        response
+    end
+  end
+end
+
+defmodule UsesQueueModule do
+  require Logger
+  use WalEx.Event, name: :todos
+
+  on_update(
+    :user,
+    [],
+    fn _events ->
+      QueuedResponses.pop().()
+    end
   )
 end

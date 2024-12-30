@@ -164,9 +164,10 @@ defmodule WalEx.Replication.Server do
             "standby status update, remote wal: #{wal_end} current wal: #{state.wal_position}"
           )
 
+          position = state.wal_position + 1
+
           [
-            <<?r, state.wal_position::64, state.wal_position::64, state.wal_position::64,
-              current_time()::64, 0>>
+            <<?r, position::64, position::64, position::64, current_time()::64, 0>>
           ]
 
         0 ->

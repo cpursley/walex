@@ -71,20 +71,23 @@ defmodule WalEx.Replication.Publisher do
   end
 
   defp process_message(
-         %{message: %Messages.Commit{lsn: commit_lsn}, app_name: app_name},
+         %{
+           message: %Messages.Commit{lsn: commit_lsn, end_lsn: commit_end_lsn},
+           app_name: app_name
+         },
          %State{transaction: {current_txn_lsn, txn}, relations: _relations} = state
        )
        when commit_lsn == current_txn_lsn do
     case Events.process(txn, app_name) do
       :ok ->
-        Server.ack(commit_lsn, app_name)
+        Server.ack(commit_end_lsn, app_name)
 
       {:ok, _} ->
-        Server.ack(commit_lsn, app_name)
+        Server.ack(commit_end_lsn, app_name)
 
       term ->
         Logger.error(
-          "Failed to process transaction for lsn: #{inspect(commit_lsn)} with term: #{inspect(term)}"
+          "Failed to process transaction for lsn: #{inspect(commit_end_lsn)} with term: #{inspect(term)}"
         )
     end
 
