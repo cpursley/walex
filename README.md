@@ -125,7 +125,7 @@ config :my_app, WalEx,
   subscriptions: ["user", "todo"],
   # WalEx assumes your module names match this pattern: MyApp.Events.User, MyApp.Events.ToDo, etc
   # but you can also specify custom modules like so:
-  # modules: [MyApp.CustomModule, MyApp.OtherCustomModule],
+  # modules: [MyApp.CustomModule.User, MyApp.OtherCustomModule.ToDo],
   name: MyApp
 ```
 
