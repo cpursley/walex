@@ -242,6 +242,7 @@ defmodule MyApp.Events.User do
   on_delete(:user, fn users ->
     IO.inspect(on_delete: users)
   end)
+end
 ```
 
 ##### Filters
