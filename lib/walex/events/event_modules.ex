@@ -32,14 +32,15 @@ defmodule WalEx.Events.EventModules do
 
   @impl true
   def handle_call({:process, txn, server}, _from, state) do
-    server
-    |> WalEx.Config.get_configs(:modules)
-    |> process_events(txn)
+    resp =
+      server
+      |> WalEx.Config.get_configs(:modules)
+      |> process_events(txn)
 
-    {:reply, :ok, state}
+    {:reply, resp, state}
   end
 
-  defp process_events(nil, %{changes: [], commit_timestamp: _}), do: nil
+  defp process_events(nil, %{changes: [], commit_timestamp: _}), do: :ok
 
   defp process_events(modules, txn) when is_list(modules) do
     process_modules(modules, txn)
@@ -48,16 +49,30 @@ defmodule WalEx.Events.EventModules do
   defp process_modules(modules, txn) do
     functions = ~w(process_all process_insert process_update process_delete)a
 
-    Enum.each(modules, &process_module(&1, functions, txn))
+    Enum.reduce_while(modules, :ok, fn module_name, _acc ->
+      case process_module(module_name, functions, txn) do
+        :ok -> {:cont, :ok}
+        {:ok, _} = term -> {:cont, term}
+        term -> {:halt, term}
+      end
+    end)
   end
 
   defp process_module(module_name, functions, txn) do
-    Enum.each(functions, &apply_process_macro(&1, module_name, txn))
+    Enum.reduce_while(functions, :ok, fn function, _acc ->
+      case apply_process_macro(function, module_name, txn) do
+        :ok -> {:cont, :ok}
+        {:ok, _} = term -> {:cont, term}
+        term -> {:halt, term}
+      end
+    end)
   end
 
   defp apply_process_macro(function, module, txn) do
     if Keyword.has_key?(module.__info__(:functions), function) do
       apply(module, function, [txn])
+    else
+      :ok
     end
   end
 end
