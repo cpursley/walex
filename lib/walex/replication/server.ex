@@ -46,7 +46,8 @@ defmodule WalEx.Replication.Server do
       slot_name: slot_name,
       publication: publication,
       durable_slot: durable_slot,
-      message_middleware: message_middleware
+      message_middleware: message_middleware,
+      raw_messages: true
     }
 
     {:ok, state}
@@ -137,6 +138,15 @@ defmodule WalEx.Replication.Server do
   def handle_result(_, state = %{step: {:start_replication, _retry_count, _backoff}}) do
     Logger.info("Successfully started replication slot: #{state.slot_name}")
     {:noreply, %{state | step: :streaming}}
+  end
+
+  @impl true
+  def handle_data(
+        <<?w, _wal_start::64, _wal_end::64, _clock::64, rest::binary>>,
+        %{raw_messages: true} = state
+      ) do
+    state.message_middleware.(rest, state.app_name)
+    {:noreply, state}
   end
 
   @impl true

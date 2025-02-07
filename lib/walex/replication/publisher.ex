@@ -4,6 +4,7 @@ defmodule WalEx.Replication.Publisher do
   """
   use GenServer
 
+  alias WalEx.Decoder
   alias WalEx.{Changes, Config, Events, Types}
   alias WalEx.Decoder.Messages
 
@@ -53,6 +54,11 @@ defmodule WalEx.Replication.Publisher do
 
   @impl true
   def handle_call(message, _from, state), do: {:reply, :ok, process_message(message, state)}
+
+  defp process_message(%{message: <<raw::binary>>} = message, state) do
+    decoded = Decoder.decode_message(raw)
+    process_message(%{message | message: decoded}, state)
+  end
 
   defp process_message(
          %{message: %Messages.Begin{final_lsn: final_lsn, commit_timestamp: commit_timestamp}},
