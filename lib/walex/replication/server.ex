@@ -49,6 +49,8 @@ defmodule WalEx.Replication.Server do
       message_middleware: message_middleware
     }
 
+    Process.flag(:message_queue_data, :off_heap)
+
     {:ok, state}
   end
 
