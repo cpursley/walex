@@ -30,6 +30,7 @@ defmodule WalEx.Events do
 
   @impl true
   def init(_) do
+    Process.flag(:message_queue_data, :off_heap)
     {:ok, %{}}
   end
 
