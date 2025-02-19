@@ -170,7 +170,7 @@ end
 
 ### Event
 
-Returned change data is a List of [%Event{}](lib/walex/event.ex) structs with changes. UPDATE event example
+Returned change data is a List of [%Event{}](lib/walex/event/event.ex) structs with changes. UPDATE event example
 where _name_ field was changed):
 
 ```elixir
