@@ -70,6 +70,12 @@ defmodule WalEx.EventTest do
                    age: 30,
                    created_at: _created_at,
                    email: "john.doe@example.com",
+                   books: ["book1, 2 and 3", "book4"],
+                   favorite_numbers: [1, 2, 3],
+                   meta: %{
+                     "key" => %{"foo" => "bar"},
+                     "list" => [1, 2, 3]
+                   },
                    updated_at: _updated_at
                  },
                  schema: "public",

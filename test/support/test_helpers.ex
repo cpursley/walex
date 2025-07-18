@@ -78,7 +78,7 @@ defmodule WalEx.Support.TestHelpers do
 
   def update_user(database_pid) do
     update_user = """
-      UPDATE \"user\" SET age = 30 WHERE id = 1
+      UPDATE \"user\" SET age = 30, books = ARRAY['book1, 2 and 3', 'book4'], favorite_numbers = ARRAY[1, 2, 3], meta = '{"key": {"foo": "bar"}, "list": [1, 2, 3]}'::JSONB WHERE id = 1
     """
 
     Postgrex.query!(database_pid, update_user, [])

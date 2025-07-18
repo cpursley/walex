@@ -57,6 +57,34 @@ defmodule WalEx.Types do
     end
   end
 
+  def cast_record(<<123>> <> record, <<"_int", _::binary>>) when is_binary(record) do
+    record
+    |> String.replace_suffix("}", "")
+    |> String.split(",")
+    |> Enum.map(&String.to_integer/1)
+  end
+
+  def cast_record(<<123>> <> record, <<"_float", _::binary>>) when is_binary(record) do
+    record
+    |> String.replace_suffix("}", "")
+    |> String.split(",")
+    |> Enum.map(&String.to_float/1)
+  end
+
+  def cast_record(<<123>> <> record, column_type)
+      when is_binary(record) and column_type in ["_text", "_varchar"] do
+    # Handle quoted strings that may contain commas
+    # Split by commas but handle quoted strings properly
+    record
+    |> String.replace_suffix("}", "")
+    |> String.split(~r/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+    |> Enum.map(fn element ->
+      element
+      |> String.trim()
+      |> String.trim("\"")
+    end)
+  end
+
   # TODO: Add additional type castings and ability to load external types
   def cast_record(record, _column_type) do
     record
