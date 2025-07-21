@@ -202,6 +202,12 @@ defmodule WalEx.Casting.TypesTest do
       assert result == ["hello, world", "foo, bar"]
     end
 
+    test "handles varchar arrays with commas in quoted strings" do
+      # Test case: book titles that contain commas and numbers
+      result = Types.cast_record(~s({"book1, 2 and 3","book4"}), "_varchar")
+      assert result == ["book1, 2 and 3", "book4"]
+    end
+
     test "handles empty text arrays" do
       assert Types.cast_record("{}", "_text") == []
     end
