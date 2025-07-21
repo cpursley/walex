@@ -102,6 +102,9 @@ defmodule Mix.Tasks.Walex.Setup do
         email citext UNIQUE NOT NULL,
         name VARCHAR  NOT NULL,
         age INTEGER DEFAULT 0,
+        books VARCHAR[] DEFAULT '{}'::VARCHAR[],
+        favorite_numbers INTEGER[] DEFAULT '{}'::INTEGER[],
+        meta JSONB DEFAULT '{}'::JSONB,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );

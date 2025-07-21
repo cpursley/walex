@@ -21,6 +21,10 @@ This library borrows liberally from
 [realtime](https://github.com/supabase/realtime) from Supabase, which in turn
 draws heavily on [cainophile](https://github.com/cainophile/cainophile).
 
+## Alternatives
+
+If you don't need to subscribe to WAL events directly in Elixir or are not an Elixir user, take a look at [Sequin](https://github.com/sequinstream/sequin), which allows you to stream Postgres changes to a variety of destinations, including Kafka, S3, and more.
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
