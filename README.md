@@ -1,5 +1,8 @@
 # WalEx
 
+[![Hex.pm](https://img.shields.io/hexpm/v/walex.svg)](https://hex.pm/packages/walex)
+[![Documentation](https://img.shields.io/badge/documentation-hexdocs-blue.svg)](https://hexdocs.pm/walex)
+
 Simple and reliable Postgres [Change Data Capture
 (CDC)](https://en.wikipedia.org/wiki/Change_data_capture) in Elixir.
 
