@@ -4,7 +4,7 @@ defmodule WalEx.Replication.Publisher do
   """
   use GenServer
 
-  alias WalEx.{Changes, Config, Events, Types}
+  alias WalEx.{Changes, Config, Events}
   alias WalEx.Decoder.Messages
 
   defmodule(State,
@@ -265,7 +265,7 @@ defmodule WalEx.Replication.Publisher do
   defp validate_tuple_and_handle_response(tuple_data, index, acc, column_name, column_type) do
     case validate_tuple(tuple_data, index) do
       {:ok, record} ->
-        {:cont, Map.put(acc, column_name, Types.cast_record(record, column_type))}
+        {:cont, Map.put(acc, column_name, WalEx.Casting.Types.cast_record(record, column_type))}
 
       :error ->
         {:halt, acc}

@@ -1,23 +1,8 @@
-# CREDITS
-# This file steals liberally from https://github.com/supabase/realtime,
-# which in turn draws on https://github.com/cainophile/cainophile
-
-# Lifted from epgsql (src/epgsql_binary.erl), this module licensed under
-# 3-clause BSD found here: https://raw.githubusercontent.com/epgsql/epgsql/devel/LICENSE
-
-# https://github.com/brianc/node-pg-types/blob/master/lib/builtins.js
-# MIT License (MIT)
-
-#  Following query was used to generate this file:
-#  SELECT json_object_agg(UPPER(PT.typname), PT.oid::int4 ORDER BY pt.oid)
-#  FROM pg_type PT
-#  WHERE typnamespace = (SELECT pgn.oid FROM pg_namespace pgn WHERE nspname = 'pg_catalog') -- Take only built-in Postgres types with stable OID (extension types are not guaranteed to be stable)
-#  AND typtype = 'b' -- Only basic types
-#  AND typisdefined -- Ignore undefined types
-
 defmodule WalEx.OidDatabase do
   @moduledoc """
   Maps a numeric PostgreSQL type ID to a descriptive string.
+
+  Implementation borrowed from Supabase Realtime, Cainophile, and epgsql.
   """
   @doc """
   Maps a numeric PostgreSQL type ID to a descriptive string.
@@ -167,6 +152,7 @@ defmodule WalEx.OidDatabase do
       3907 -> "_numrange"
       3909 -> "_tsrange"
       3911 -> "_tstzrange"
+      3912 -> "daterange"
       3913 -> "_daterange"
       3927 -> "_int8range"
       4089 -> "regnamespace"
