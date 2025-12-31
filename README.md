@@ -148,6 +148,16 @@ config :my_app, WalEx,
   name: MyApp
 ```
 
+If you would like to subscribe to all tables, you can pass a special atom to subscriptions.
+
+```elixir
+config :my_app, WalEx,
+  url: "postgres://username:password@hostname:port/database",
+  publication: "events",
+  subscriptions: [:all_tables],
+  name: MyApp,
+```
+
 You can also dynamically update the config at runtime:
 
 ```elixir

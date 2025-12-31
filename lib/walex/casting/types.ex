@@ -135,7 +135,7 @@ defmodule WalEx.Casting.Types do
     # PostgreSQL bytea hex format starts with \x
     if String.starts_with?(record, "\\x") do
       record
-      |> String.slice(2..-1)
+      |> String.slice(2..-1//1)
       |> Base.decode16!(case: :mixed)
     else
       record
@@ -413,7 +413,7 @@ defmodule WalEx.Casting.Types do
           elem ->
             if String.starts_with?(elem, "\\x") do
               elem
-              |> String.slice(2..-1)
+              |> String.slice(2..-1//1)
               |> Base.decode16!(case: :mixed)
             else
               elem
