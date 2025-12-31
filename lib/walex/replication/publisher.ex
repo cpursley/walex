@@ -56,7 +56,7 @@ defmodule WalEx.Replication.Publisher do
 
   defp process_message(
          %{message: %Messages.Begin{final_lsn: final_lsn, commit_timestamp: commit_timestamp}},
-         state
+         %State{} = state
        ) do
     %State{
       state
